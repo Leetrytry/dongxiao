@@ -1,0 +1,102 @@
+# 洞箫练习 Android App
+
+这是一个简易原生 Android 洞箫练习 App 原型，重点覆盖：
+
+- 长音练习：实时拾音、基频检测、目标音偏差、连续命中时长、稳定度。
+- 多调门支持：内置 C/D/Eb/E/F/F#/G/A/Bb/B 调洞箫，支持筒音作 5/2/1/6。
+- 技巧练习：长音、音阶、吐音、气震音、滑音、打音/叠音。
+
+## 工程结构
+
+```text
+app/src/main/java/com/dongxiao/practice/
+├── MainActivity.java              # 主界面、权限、实时刷新
+├── audio/
+│   ├── AudioAnalyzer.java         # Android AudioRecord 拾音
+│   ├── PitchDetector.java         # YIN 基频检测
+│   └── PitchResult.java
+├── music/
+│   ├── FingeringMode.java         # 筒音作几
+│   ├── MusicTheory.java           # 频率、MIDI、cent 转换
+│   ├── TargetNote.java
+│   └── XiaoTuning.java            # 洞箫调门和目标音生成
+├── practice/
+│   ├── PracticeAnalyzer.java      # 练习指标分析
+│   ├── PracticeMode.java
+│   └── PracticeStats.java
+└── ui/
+    └── TunerView.java             # 音准表
+```
+
+## 构建
+
+本机已按最快命令行方案配置项目内工具链：
+
+- Android SDK：`.tools/android-sdk`
+- JDK 17：`.tools/jdk-17.0.20+8`
+- Gradle：`.tools/gradle-8.10.2`
+
+重新打包 debug APK：
+
+```bash
+scripts/build-debug.sh
+```
+
+APK 输出路径：
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+手机通过 USB 连接、开启开发者模式和 USB 调试，并在手机上确认授权后，可执行：
+
+```bash
+scripts/install-debug.sh
+```
+
+也可以用 Android Studio 打开本目录，安装：
+
+- Android SDK 35
+- Android Gradle Plugin 8.7.3
+- JDK 17
+
+如果使用系统级 Android SDK 和 Gradle，也可执行：
+
+```bash
+gradle assembleDebug
+```
+
+如果使用 Android Studio，它会自动下载缺失的 Gradle/AGP 依赖。
+
+## 使用方式
+
+1. 选择洞箫调门，例如 `F调洞箫（筒音 F3）`。
+2. 选择筒音作法，例如 `筒音作5`。
+3. 选择目标音，或保持 `自动匹配最近目标音`。
+4. 选择练习项目。
+5. 点击 `开始拾音`，授权麦克风权限。
+6. 手机麦克风距离洞箫约 20 到 50 厘米，观察音准表和指标。
+
+## 指标解释
+
+- `目标偏差`：当前检测频率相对目标音的 cent 偏差；0 cent 最准。
+- `连续命中`：长音偏差进入 ±25 cent 后的连续持续时间。
+- `稳定度`：最近约 2 秒内音高偏差的标准差，越小越稳。
+- `起音次数`：吐音练习中明显音量起点的计数。
+- `气震频率/深度`：最近约 2.2 秒内音高周期性波动的估算。
+- `最近滑动`：最近约 1.5 秒内音高向上或向下移动的趋势。
+- `快速音高波动`：打音/叠音练习中短时间音高跳变的计数。
+
+## 当前边界
+
+- 这是本地实时分析原型，没有账号、曲库、伴奏、历史统计。
+- 技巧练习目前是声学特征辅助判断，不是专业教师级动作判分。
+- 洞箫调门模型默认把所选调门作为筒音实际音高，再按筒音作法生成目标音。如果你使用的指法表不同，只需要调整 `XiaoTuning`。
+- 基频检测依赖手机麦克风质量和环境噪声；真机测试时建议在安静房间内验证。
+
+## 图标来源
+
+当前桌面图标基于 Twitter Emoji `Flute` SVG 改造成 Android launcher icon，并叠加了本项目原创竹叶背景装饰。
+
+- Source: https://svgicons.com/icon/312002/flute
+- License: CC BY 4.0
