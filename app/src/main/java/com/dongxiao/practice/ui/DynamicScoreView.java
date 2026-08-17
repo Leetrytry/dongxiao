@@ -1,6 +1,7 @@
 package com.dongxiao.practice.ui;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
@@ -9,21 +10,31 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import com.dongxiao.practice.R;
+import com.dongxiao.practice.song.ImageScoreMarker;
 import com.dongxiao.practice.song.PracticeSong;
 import com.dongxiao.practice.song.SongNote;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class DynamicScoreView extends View {
     private static final int VISIBLE_ROWS = 3;
     private static final double EPSILON = 0.03;
 
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint imagePaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Paint notePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
+    private final RectF imageRect = new RectF();
+    private final RectF highlightRect = new RectF();
 
     private PracticeSong song;
+    private List<Bitmap> imagePages = new ArrayList<>();
+    private List<ImageScoreMarker> imageMarkers = new ArrayList<>();
     private double beatPosition = 0.0;
     private int currentNoteIndex = -1;
+    private boolean imageScoreMode = false;
 
     public DynamicScoreView(Context context) {
         super(context);
@@ -46,6 +57,16 @@ public final class DynamicScoreView extends View {
         this.song = song;
         this.beatPosition = 0.0;
         this.currentNoteIndex = -1;
+        this.imageScoreMode = false;
+        this.imagePages = new ArrayList<>();
+        this.imageMarkers = new ArrayList<>();
+        invalidate();
+    }
+
+    public void setImageScore(List<Bitmap> imagePages, List<ImageScoreMarker> imageMarkers) {
+        this.imagePages = imagePages == null ? new ArrayList<>() : new ArrayList<>(imagePages);
+        this.imageMarkers = imageMarkers == null ? new ArrayList<>() : new ArrayList<>(imageMarkers);
+        this.imageScoreMode = !this.imagePages.isEmpty() && !this.imageMarkers.isEmpty();
         invalidate();
     }
 
@@ -70,9 +91,91 @@ public final class DynamicScoreView extends View {
             return;
         }
 
+        if (imageScoreMode) {
+            drawImageScore(canvas, width, height);
+            return;
+        }
+
         drawHeader(canvas, width);
         drawScoreRows(canvas, width, height);
         drawProgress(canvas, width, height);
+    }
+
+    private void drawImageScore(Canvas canvas, int width, int height) {
+        ImageScoreMarker marker = currentMarker();
+        int pageIndex = marker == null ? 0 : marker.pageIndex;
+        pageIndex = Math.max(0, Math.min(pageIndex, imagePages.size() - 1));
+        Bitmap bitmap = imagePages.get(pageIndex);
+        if (bitmap == null || bitmap.isRecycled()) {
+            drawEmpty(canvas, width, height);
+            return;
+        }
+
+        computeImageRect(bitmap, width, height);
+        canvas.drawBitmap(bitmap, null, imageRect, imagePaint);
+
+        if (marker != null) {
+            drawImageHighlight(canvas, marker);
+        }
+        drawImageHeader(canvas, width, pageIndex + 1, imagePages.size());
+        drawProgress(canvas, width, height);
+    }
+
+    private ImageScoreMarker currentMarker() {
+        if (imageMarkers.isEmpty()) {
+            return null;
+        }
+        int index = currentNoteIndex < 0 ? 0 : Math.min(currentNoteIndex, imageMarkers.size() - 1);
+        return imageMarkers.get(index);
+    }
+
+    private void computeImageRect(Bitmap bitmap, int width, int height) {
+        float availableLeft = dp(8);
+        float availableTop = dp(28);
+        float availableRight = width - dp(8);
+        float availableBottom = height - dp(24);
+        float availableWidth = Math.max(1.0f, availableRight - availableLeft);
+        float availableHeight = Math.max(1.0f, availableBottom - availableTop);
+        float scale = Math.min(availableWidth / bitmap.getWidth(), availableHeight / bitmap.getHeight());
+        float drawWidth = bitmap.getWidth() * scale;
+        float drawHeight = bitmap.getHeight() * scale;
+        float left = availableLeft + (availableWidth - drawWidth) / 2.0f;
+        float top = availableTop + (availableHeight - drawHeight) / 2.0f;
+        imageRect.set(left, top, left + drawWidth, top + drawHeight);
+    }
+
+    private void drawImageHighlight(Canvas canvas, ImageScoreMarker marker) {
+        float left = imageRect.left + marker.left * imageRect.width();
+        float top = imageRect.top + marker.top * imageRect.height();
+        float right = left + marker.width * imageRect.width();
+        float bottom = top + marker.height * imageRect.height();
+        float minSize = dp(18);
+        if (right - left < minSize) {
+            float centerX = (left + right) / 2.0f;
+            left = centerX - minSize / 2.0f;
+            right = centerX + minSize / 2.0f;
+        }
+        if (bottom - top < minSize) {
+            float centerY = (top + bottom) / 2.0f;
+            top = centerY - minSize / 2.0f;
+            bottom = centerY + minSize / 2.0f;
+        }
+        highlightRect.set(left - dp(4), top - dp(3), right + dp(4), bottom + dp(3));
+        notePaint.setColor(0x55B34234);
+        canvas.drawRoundRect(highlightRect, dp(7), dp(7), notePaint);
+        linePaint.setColor(color(R.color.cinnabar));
+        linePaint.setStrokeWidth(dp(2));
+        linePaint.setStyle(Paint.Style.STROKE);
+        canvas.drawRoundRect(highlightRect, dp(7), dp(7), linePaint);
+        linePaint.setStyle(Paint.Style.FILL);
+    }
+
+    private void drawImageHeader(Canvas canvas, int width, int page, int pageCount) {
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setFakeBoldText(true);
+        textPaint.setTextSize(dp(11));
+        textPaint.setColor(color(R.color.ink));
+        canvas.drawText("原图动态高亮 · 第 " + page + " / " + pageCount + " 页", width / 2.0f, dp(18), textPaint);
     }
 
     private void drawPaper(Canvas canvas, int width, int height) {

@@ -35,6 +35,7 @@ import com.dongxiao.practice.practice.PracticeSessionScorer;
 import com.dongxiao.practice.practice.PracticeStats;
 import com.dongxiao.practice.song.AbcSongImporter;
 import com.dongxiao.practice.song.ImageScore;
+import com.dongxiao.practice.song.ImageScoreMarker;
 import com.dongxiao.practice.song.ImageScoreRepository;
 import com.dongxiao.practice.song.JianpuTextCatalog;
 import com.dongxiao.practice.song.JianpuTextSongImporter;
@@ -550,12 +551,91 @@ public final class MainActivity extends Activity {
         songTitleText.setText(song.title);
         songMetaText.setText(song.metaText());
         if (song.title.startsWith("图片转谱 · ")) {
-            songStatusText.setText("该曲由本地图片谱 OCR 转换，可播放并动态高亮；建议对照下方图片谱校正细节。");
+            songStatusText.setText("该曲由本地图片谱 OCR 转换，播放时会在原图片谱上动态高亮；建议对照原图校正细节。");
         } else {
             songStatusText.setText("伴奏会按谱面节奏播放，当前音符会同步高亮。");
         }
         dynamicScoreView.setSong(song);
+        configureImageDynamicScore(song);
         songPlayButton.setText("播放伴奏");
+    }
+
+    private void configureImageDynamicScore(PracticeSong song) {
+        ImageScore imageScore = imageScoreForConvertedSong(song);
+        if (imageScore == null) {
+            return;
+        }
+        try {
+            dynamicScoreView.setImageScore(loadImageScoreBitmaps(imageScore), loadImageScoreMarkers(imageScore));
+        } catch (IOException | IllegalArgumentException error) {
+            songStatusText.setText("原图动态高亮加载失败，已回退为简谱显示。");
+        }
+    }
+
+    private ImageScore imageScoreForConvertedSong(PracticeSong song) {
+        String prefix = "图片转谱 · ";
+        if (song == null || !song.title.startsWith(prefix)) {
+            return null;
+        }
+        String imageScoreTitle = song.title.substring(prefix.length());
+        for (ImageScore imageScore : imageScores) {
+            if (imageScore.title.equals(imageScoreTitle)) {
+                return imageScore;
+            }
+        }
+        return null;
+    }
+
+    private List<Bitmap> loadImageScoreBitmaps(ImageScore imageScore) throws IOException {
+        List<Bitmap> bitmaps = new ArrayList<>();
+        for (String assetPath : imageScore.assetPaths) {
+            try (InputStream inputStream = getAssets().open(assetPath)) {
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                if (bitmap != null) {
+                    bitmaps.add(bitmap);
+                }
+            }
+        }
+        if (bitmaps.isEmpty()) {
+            throw new IOException("No image pages");
+        }
+        return bitmaps;
+    }
+
+    private List<ImageScoreMarker> loadImageScoreMarkers(ImageScore imageScore) throws IOException {
+        List<ImageScoreMarker> markers = new ArrayList<>();
+        for (int pageIndex = 0; pageIndex < imageScore.assetPaths.size(); pageIndex++) {
+            String layoutText = readAssetText(layoutAssetPath(imageScore.assetPaths.get(pageIndex)));
+            String[] lines = layoutText.split("\\n");
+            for (String rawLine : lines) {
+                String line = rawLine.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                String[] parts = line.split("\\s+");
+                if (parts.length < 4) {
+                    continue;
+                }
+                markers.add(new ImageScoreMarker(
+                        pageIndex,
+                        Float.parseFloat(parts[0]),
+                        Float.parseFloat(parts[1]),
+                        Float.parseFloat(parts[2]),
+                        Float.parseFloat(parts[3])
+                ));
+            }
+        }
+        if (markers.isEmpty()) {
+            throw new IOException("No image score markers");
+        }
+        return markers;
+    }
+
+    private String layoutAssetPath(String imageAssetPath) {
+        int slash = imageAssetPath.lastIndexOf('/');
+        int dot = imageAssetPath.lastIndexOf('.');
+        String fileName = imageAssetPath.substring(slash + 1, dot > slash ? dot : imageAssetPath.length());
+        return "score_layout/" + fileName + ".txt";
     }
 
     private List<PracticeSong> loadBundledJianpuSongs() {

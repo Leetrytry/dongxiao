@@ -648,7 +648,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="6dp"
                         android:layout_weight="1"
-                        android:text="动态简谱"
+                        android:text="原图动态谱"
                         android:textColor="@color/ink"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -657,7 +657,7 @@
                 <com.dongxiao.practice.ui.DynamicScoreView
                     android:id="@+id/dynamicScoreView"
                     android:layout_width="match_parent"
-                    android:layout_height="210dp"
+                    android:layout_height="360dp"
                     android:layout_marginTop="6dp"
                     android:background="@color/paper" />
             </LinearLayout>
