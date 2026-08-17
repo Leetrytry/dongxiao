@@ -24,6 +24,8 @@ import com.dongxiao.practice.music.TargetNote;
 import com.dongxiao.practice.music.XiaoTuning;
 import com.dongxiao.practice.practice.PracticeAnalyzer;
 import com.dongxiao.practice.practice.PracticeMode;
+import com.dongxiao.practice.practice.PracticeScore;
+import com.dongxiao.practice.practice.PracticeSessionScorer;
 import com.dongxiao.practice.practice.PracticeStats;
 import com.dongxiao.practice.ui.TunerView;
 import com.dongxiao.practice.ui.WaveformView;
@@ -40,10 +42,12 @@ public final class MainActivity extends Activity {
     private TextView pitchText;
     private TextView detailText;
     private TextView metricText;
+    private TextView scoreText;
     private TextView modeTitleText;
     private LinearLayout homeContainer;
     private LinearLayout practiceContainer;
     private LinearLayout modeList;
+    private LinearLayout scorePanel;
     private Spinner tuningSpinner;
     private Spinner fingeringSpinner;
     private Spinner targetSpinner;
@@ -54,9 +58,11 @@ public final class MainActivity extends Activity {
     private WaveformView waveformView;
 
     private final PracticeAnalyzer practiceAnalyzer = new PracticeAnalyzer();
+    private final PracticeSessionScorer sessionScorer = new PracticeSessionScorer();
     private final List<TargetNote> targets = new ArrayList<>();
     private AudioAnalyzer audioAnalyzer;
     private PracticeMode currentPracticeMode;
+    private boolean sessionHasFrames = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,10 +101,12 @@ public final class MainActivity extends Activity {
         pitchText = findViewById(R.id.pitchText);
         detailText = findViewById(R.id.detailText);
         metricText = findViewById(R.id.metricText);
+        scoreText = findViewById(R.id.scoreText);
         modeTitleText = findViewById(R.id.modeTitleText);
         homeContainer = findViewById(R.id.homeContainer);
         practiceContainer = findViewById(R.id.practiceContainer);
         modeList = findViewById(R.id.modeList);
+        scorePanel = findViewById(R.id.scorePanel);
         tuningSpinner = findViewById(R.id.tuningSpinner);
         fingeringSpinner = findViewById(R.id.fingeringSpinner);
         targetSpinner = findViewById(R.id.targetSpinner);
@@ -123,6 +131,8 @@ public final class MainActivity extends Activity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 updateTargets();
                 practiceAnalyzer.reset();
+                sessionScorer.reset();
+                sessionHasFrames = false;
             }
 
             @Override
@@ -214,6 +224,8 @@ public final class MainActivity extends Activity {
         pitchText.setText("未检测到稳定音高");
         detailText.setText("Hz、音名、cent 偏差和稳定度会显示在这里。");
         metricText.setText("练习指标等待开始。");
+        scorePanel.setVisibility(View.GONE);
+        scoreText.setText("");
         waveformView.clear();
     }
 
@@ -283,6 +295,10 @@ public final class MainActivity extends Activity {
 
     private void startListening() {
         practiceAnalyzer.reset();
+        sessionScorer.reset();
+        sessionHasFrames = false;
+        scorePanel.setVisibility(View.GONE);
+        scoreText.setText("");
         audioAnalyzer = new AudioAnalyzer(new AudioAnalyzer.Listener() {
             @Override
             public void onAudioFrame(PitchResult result, float[] samples, int sampleRate, long timestampMs) {
@@ -310,12 +326,20 @@ public final class MainActivity extends Activity {
     }
 
     private void stopListening() {
+        boolean shouldScore = audioAnalyzer != null && currentPracticeMode != null && sessionHasFrames;
         if (audioAnalyzer != null) {
             audioAnalyzer.stop();
             audioAnalyzer = null;
         }
         startButton.setText("开始拾音");
-        statusText.setText("拾音已停止。");
+        if (shouldScore) {
+            PracticeScore score = sessionScorer.finish(currentPracticeMode);
+            scoreText.setText(score.format());
+            scorePanel.setVisibility(View.VISIBLE);
+            statusText.setText("本次练习已结束，评分已生成。");
+        } else {
+            statusText.setText("拾音已停止。");
+        }
         if (waveformView != null) {
             waveformView.clear();
         }
@@ -337,6 +361,8 @@ public final class MainActivity extends Activity {
         }
 
         PracticeStats stats = practiceAnalyzer.update(result, target, timestampMs);
+        sessionScorer.update(result, target, stats, timestampMs);
+        sessionHasFrames = true;
         if (result.voiced) {
             updateVoicedUi(result, sampleRate, target, mode, stats);
         } else {

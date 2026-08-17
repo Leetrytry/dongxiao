@@ -1,0 +1,239 @@
+package com.dongxiao.practice.practice;
+
+import com.dongxiao.practice.audio.PitchResult;
+import com.dongxiao.practice.music.TargetNote;
+
+import java.util.Locale;
+
+public final class PracticeSessionScorer {
+    private static final double HIT_TOLERANCE_CENTS = 25.0;
+
+    private long firstFrameMs = -1L;
+    private long lastFrameMs = -1L;
+    private long lastVoicedMs = -1L;
+    private double voicedMs = 0.0;
+    private double sumAbsCents = 0.0;
+    private double sumCents = 0.0;
+    private double sumSquaresCents = 0.0;
+    private int voicedFrames = 0;
+    private int hitFrames = 0;
+    private int onsetCount = 0;
+    private int rapidMoveCount = 0;
+    private long lastOnsetMs = -1L;
+    private long lastRapidMoveMs = -1L;
+    private double lastRms = 0.0;
+    private Double lastCents = null;
+    private double maxVibratoRateHz = 0.0;
+    private double maxVibratoDepthCents = 0.0;
+    private double maxAbsSlideCents = 0.0;
+
+    public void reset() {
+        firstFrameMs = -1L;
+        lastFrameMs = -1L;
+        lastVoicedMs = -1L;
+        voicedMs = 0.0;
+        sumAbsCents = 0.0;
+        sumCents = 0.0;
+        sumSquaresCents = 0.0;
+        voicedFrames = 0;
+        hitFrames = 0;
+        onsetCount = 0;
+        rapidMoveCount = 0;
+        lastOnsetMs = -1L;
+        lastRapidMoveMs = -1L;
+        lastRms = 0.0;
+        lastCents = null;
+        maxVibratoRateHz = 0.0;
+        maxVibratoDepthCents = 0.0;
+        maxAbsSlideCents = 0.0;
+    }
+
+    public void update(PitchResult pitch, TargetNote target, PracticeStats stats, long nowMs) {
+        if (firstFrameMs < 0L) {
+            firstFrameMs = nowMs;
+        }
+        lastFrameMs = nowMs;
+        updateOnsetCounter(pitch.rms, nowMs);
+
+        boolean hasPitch = pitch.voiced && target != null;
+        if (!hasPitch) {
+            lastRms = pitch.rms;
+            return;
+        }
+
+        double cents = target.centsFrom(pitch.frequencyHz);
+        double absCents = Math.abs(cents);
+        if (lastVoicedMs > 0L) {
+            long deltaMs = Math.max(0L, Math.min(250L, nowMs - lastVoicedMs));
+            voicedMs += deltaMs;
+        }
+        lastVoicedMs = nowMs;
+        voicedFrames++;
+        sumAbsCents += absCents;
+        sumCents += cents;
+        sumSquaresCents += cents * cents;
+        if (absCents <= HIT_TOLERANCE_CENTS) {
+            hitFrames++;
+        }
+        updateRapidMoveCounter(cents, nowMs);
+        maxVibratoRateHz = Math.max(maxVibratoRateHz, stats.vibratoRateHz);
+        maxVibratoDepthCents = Math.max(maxVibratoDepthCents, stats.vibratoDepthCents);
+        maxAbsSlideCents = Math.max(maxAbsSlideCents, Math.abs(stats.slideDeltaCents));
+        lastRms = pitch.rms;
+        lastCents = cents;
+    }
+
+    public PracticeScore finish(PracticeMode mode) {
+        if (voicedFrames < 3 || voicedMs < 700.0) {
+            return new PracticeScore(
+                    0,
+                    voicedMs / 1000.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    "有效声音太少，无法评分。",
+                    "请至少稳定吹奏 2 秒以上再结束。"
+            );
+        }
+
+        double meanAbsCents = sumAbsCents / voicedFrames;
+        double meanCents = sumCents / voicedFrames;
+        double stabilityCents = Math.sqrt(Math.max(0.0, sumSquaresCents / voicedFrames - meanCents * meanCents));
+        double hitRate = hitFrames * 100.0 / voicedFrames;
+        double durationSeconds = voicedMs / 1000.0;
+
+        double pitchScore = scoreLowerIsBetter(meanAbsCents, 8.0, 55.0);
+        double stabilityScore = scoreLowerIsBetter(stabilityCents, 8.0, 50.0);
+        double durationScore = Math.min(100.0, durationSeconds / targetDuration(mode) * 100.0);
+        double hitScore = hitRate;
+        double modeScore = modeScore(mode, durationSeconds);
+        int total = clampScore(
+                pitchScore * 0.34
+                        + stabilityScore * 0.24
+                        + hitScore * 0.18
+                        + durationScore * 0.12
+                        + modeScore * 0.12
+        );
+
+        return new PracticeScore(
+                total,
+                durationSeconds,
+                meanAbsCents,
+                stabilityCents,
+                hitRate,
+                commentFor(total, meanAbsCents, stabilityCents),
+                detailFor(mode, modeScore)
+        );
+    }
+
+    private void updateOnsetCounter(double rms, long nowMs) {
+        boolean crossed = lastRms <= 0.025 && rms > 0.025;
+        boolean pastRefractory = lastOnsetMs < 0L || nowMs - lastOnsetMs > 120L;
+        if (crossed && pastRefractory) {
+            onsetCount++;
+            lastOnsetMs = nowMs;
+        }
+    }
+
+    private void updateRapidMoveCounter(double cents, long nowMs) {
+        if (lastCents == null) {
+            return;
+        }
+        boolean movedFast = Math.abs(cents - lastCents) > 45.0;
+        boolean pastRefractory = lastRapidMoveMs < 0L || nowMs - lastRapidMoveMs > 150L;
+        if (movedFast && pastRefractory) {
+            rapidMoveCount++;
+            lastRapidMoveMs = nowMs;
+        }
+    }
+
+    private double modeScore(PracticeMode mode, double durationSeconds) {
+        switch (mode) {
+            case LONG_TONE:
+                return Math.min(100.0, durationSeconds / 8.0 * 100.0);
+            case SCALE:
+                return Math.min(100.0, Math.max(hitFrames, rapidMoveCount) / 8.0 * 100.0);
+            case TONGUING:
+                return Math.min(100.0, onsetCount / 8.0 * 100.0);
+            case VIBRATO:
+                double rateScore = scoreInRange(maxVibratoRateHz, 4.0, 6.0, 2.0, 8.0);
+                double depthScore = scoreInRange(maxVibratoDepthCents, 20.0, 60.0, 8.0, 95.0);
+                return rateScore * 0.6 + depthScore * 0.4;
+            case SLIDE:
+                return scoreInRange(maxAbsSlideCents, 80.0, 350.0, 30.0, 650.0);
+            case ORNAMENT:
+                return Math.min(100.0, rapidMoveCount / 6.0 * 100.0);
+            default:
+                return 70.0;
+        }
+    }
+
+    private String detailFor(PracticeMode mode, double modeScore) {
+        switch (mode) {
+            case LONG_TONE:
+                return String.format(Locale.CHINA, "长音专项：持续度 %.0f 分。", modeScore);
+            case SCALE:
+                return String.format(Locale.CHINA, "音阶专项：换音/命中 %.0f 分。", modeScore);
+            case TONGUING:
+                return String.format(Locale.CHINA, "吐音专项：检测到 %d 次起音。", onsetCount);
+            case VIBRATO:
+                return String.format(Locale.CHINA, "气震专项：最高 %.1f Hz，深度 ±%.0f cent。", maxVibratoRateHz, maxVibratoDepthCents);
+            case SLIDE:
+                return String.format(Locale.CHINA, "滑音专项：最大滑动 %.0f cent。", maxAbsSlideCents);
+            case ORNAMENT:
+                return String.format(Locale.CHINA, "装饰音专项：检测到 %d 次快速波动。", rapidMoveCount);
+            default:
+                return "";
+        }
+    }
+
+    private static double targetDuration(PracticeMode mode) {
+        return mode == PracticeMode.LONG_TONE ? 8.0 : 6.0;
+    }
+
+    private static double scoreLowerIsBetter(double value, double excellent, double poor) {
+        if (value <= excellent) {
+            return 100.0;
+        }
+        if (value >= poor) {
+            return 0.0;
+        }
+        return 100.0 * (poor - value) / (poor - excellent);
+    }
+
+    private static double scoreInRange(double value, double minGood, double maxGood, double minOk, double maxOk) {
+        if (value >= minGood && value <= maxGood) {
+            return 100.0;
+        }
+        if (value < minOk || value > maxOk) {
+            return 0.0;
+        }
+        if (value < minGood) {
+            return 100.0 * (value - minOk) / (minGood - minOk);
+        }
+        return 100.0 * (maxOk - value) / (maxOk - maxGood);
+    }
+
+    private static int clampScore(double value) {
+        return (int) Math.max(0.0, Math.min(100.0, Math.round(value)));
+    }
+
+    private static String commentFor(int score, double meanAbsCents, double stabilityCents) {
+        if (score >= 90) {
+            return "表现很稳，音准和控制都比较扎实。";
+        }
+        if (score >= 75) {
+            return "整体可用，继续压低偏差和波动。";
+        }
+        if (score >= 60) {
+            return "已经有可识别的目标音，但稳定度还需要加强。";
+        }
+        if (meanAbsCents > 45.0) {
+            return "主要问题是音准偏差较大，先慢吹找准目标音。";
+        }
+        if (stabilityCents > 40.0) {
+            return "主要问题是音高波动较大，先减小气息和口风变化。";
+        }
+        return "有效练习质量偏低，建议延长吹奏时间并保持目标音。";
+    }
+}
