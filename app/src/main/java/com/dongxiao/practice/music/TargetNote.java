@@ -19,6 +19,6 @@ public final class TargetNote {
 
     @Override
     public String toString() {
-        return label + " · " + MusicTheory.noteName(midi);
+        return label;
     }
 }

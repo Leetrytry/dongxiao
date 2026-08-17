@@ -97,7 +97,7 @@ public final class MainActivity extends Activity {
         List<XiaoTuning> tunings = XiaoTuning.defaults();
         ArrayAdapter<XiaoTuning> tuningAdapter = createAdapter(tunings);
         tuningSpinner.setAdapter(tuningAdapter);
-        tuningSpinner.setSelection(4);
+        tuningSpinner.setSelection(1);
 
         ArrayAdapter<FingeringMode> fingeringAdapter = createAdapter(FingeringMode.values());
         fingeringSpinner.setAdapter(fingeringAdapter);
@@ -169,9 +169,12 @@ public final class MainActivity extends Activity {
         ArrayAdapter<TargetNote> targetAdapter = createAdapter(new ArrayList<>(targets));
         targetSpinner.setAdapter(targetAdapter);
         if (!targets.isEmpty()) {
-            targetSpinner.setSelection(Math.min(3, targets.size() - 1));
+            targetSpinner.setSelection(0);
             TargetNote target = targets.get(targetSpinner.getSelectedItemPosition());
-            tunerView.setReading(0.0, false, "目标 " + target);
+            tunerView.setReading(0.0, false, "目标 " + target.label);
+            if (statusText != null) {
+                statusText.setText(tuning.referenceText(fingeringMode));
+            }
         }
     }
 
@@ -259,7 +262,7 @@ public final class MainActivity extends Activity {
         double centsToNearest = MusicTheory.centsBetween(result.frequencyHz, detectedMidiFrequency);
         double centsToTarget = target.centsFrom(result.frequencyHz);
 
-        tunerView.setReading(centsToTarget, true, "目标 " + target);
+        tunerView.setReading(centsToTarget, true, "目标 " + target.label);
         pitchText.setText(String.format(
                 Locale.CHINA,
                 "检测 %s · %s",
@@ -268,8 +271,9 @@ public final class MainActivity extends Activity {
         ));
         detailText.setText(String.format(
                 Locale.CHINA,
-                "目标：%s（%s）\n目标偏差：%s · 最近音偏差：%s\n置信度：%.0f%% · RMS：%.3f · 采样率：%d",
-                target,
+                "目标：%s（%s / %s）\n目标偏差：%s · 最近音偏差：%s\n置信度：%.0f%% · RMS：%.3f · 采样率：%d",
+                target.label,
+                MusicTheory.noteName(target.midi),
                 MusicTheory.formatHz(target.frequencyHz),
                 MusicTheory.formatCents(centsToTarget),
                 MusicTheory.formatCents(centsToNearest),
@@ -281,7 +285,7 @@ public final class MainActivity extends Activity {
     }
 
     private void updateUnvoicedUi(TargetNote target, PracticeMode mode, PracticeStats stats) {
-        tunerView.setReading(0.0, false, "目标 " + target);
+        tunerView.setReading(0.0, false, "目标 " + target.label);
         pitchText.setText("未检测到稳定音高");
         detailText.setText("请稳定吹出一个清晰长音，避免麦克风贴得太近或环境噪声过大。");
         metricText.setText(formatMetrics(mode, stats));

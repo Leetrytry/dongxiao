@@ -11,25 +11,20 @@ public final class XiaoTuning {
     };
 
     public final String label;
+    public final int tonicMidi;
     public final int tubeMidi;
 
-    public XiaoTuning(String label, int tubeMidi) {
+    public XiaoTuning(String label, int tonicMidi) {
         this.label = label;
-        this.tubeMidi = tubeMidi;
+        this.tonicMidi = tonicMidi;
+        this.tubeMidi = tonicMidi + semitoneOfDegree(5) - 12;
     }
 
     public static List<XiaoTuning> defaults() {
         return Arrays.asList(
-                new XiaoTuning("C调洞箫（筒音 C3）", MusicTheory.midiForNote("C", 3)),
-                new XiaoTuning("D调洞箫（筒音 D3）", MusicTheory.midiForNote("D", 3)),
-                new XiaoTuning("Eb调洞箫（筒音 Eb3）", MusicTheory.midiForNote("Eb", 3)),
-                new XiaoTuning("E调洞箫（筒音 E3）", MusicTheory.midiForNote("E", 3)),
-                new XiaoTuning("F调洞箫（筒音 F3）", MusicTheory.midiForNote("F", 3)),
-                new XiaoTuning("F#调洞箫（筒音 F#3）", MusicTheory.midiForNote("F#", 3)),
-                new XiaoTuning("G调洞箫（筒音 G3）", MusicTheory.midiForNote("G", 3)),
-                new XiaoTuning("A调洞箫（筒音 A3）", MusicTheory.midiForNote("A", 3)),
-                new XiaoTuning("Bb调洞箫（筒音 Bb3）", MusicTheory.midiForNote("Bb", 3)),
-                new XiaoTuning("B调洞箫（筒音 B3）", MusicTheory.midiForNote("B", 3))
+                new XiaoTuning("G调", MusicTheory.midiForNote("G", 4)),
+                new XiaoTuning("F调", MusicTheory.midiForNote("F", 4)),
+                new XiaoTuning("E调", MusicTheory.midiForNote("E", 4))
         );
     }
 
@@ -60,6 +55,13 @@ public final class XiaoTuning {
             }
         }
         return closest;
+    }
+
+    public String referenceText(FingeringMode fingeringMode) {
+        String tubeDegreeLabel = fingeringMode == null ? "低音5" : "低音" + fingeringMode.tubeDegree;
+        return label + "基准：" + tubeDegreeLabel + " = "
+                + MusicTheory.noteName(tubeMidi) + " / "
+                + MusicTheory.formatHz(MusicTheory.frequencyForMidi(tubeMidi));
     }
 
     @Override
