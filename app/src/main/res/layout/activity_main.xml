@@ -657,7 +657,7 @@
                 <com.dongxiao.practice.ui.DynamicScoreView
                     android:id="@+id/dynamicScoreView"
                     android:layout_width="match_parent"
-                    android:layout_height="190dp"
+                    android:layout_height="210dp"
                     android:layout_marginTop="6dp"
                     android:background="@color/paper" />
             </LinearLayout>

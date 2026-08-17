@@ -13,7 +13,7 @@ import com.dongxiao.practice.song.PracticeSong;
 import com.dongxiao.practice.song.SongNote;
 
 public final class DynamicScoreView extends View {
-    private static final int VISIBLE_ROWS = 2;
+    private static final int VISIBLE_ROWS = 3;
     private static final double EPSILON = 0.03;
 
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -78,30 +78,30 @@ public final class DynamicScoreView extends View {
     private void drawPaper(Canvas canvas, int width, int height) {
         linePaint.setColor(color(R.color.line));
         linePaint.setStrokeWidth(dp(1));
-        for (int y = dp(44); y < height - dp(14); y += dp(32)) {
+        for (int y = dp(34); y < height - dp(10); y += dp(24)) {
             canvas.drawLine(dp(12), y, width - dp(12), y, linePaint);
         }
     }
 
     private void drawHeader(Canvas canvas, int width) {
         textPaint.setFakeBoldText(true);
-        textPaint.setTextSize(dp(13));
+        textPaint.setTextSize(dp(11));
         textPaint.setColor(color(R.color.ink));
         String keyText = "1=" + keyName(song.keyLabel);
         String meterText = song.meterBeats + "/4";
         String tempoText = song.tempoBpm + " BPM";
-        canvas.drawText(keyText + "    " + meterText + "    " + tempoText, width / 2.0f, dp(22), textPaint);
+        canvas.drawText(keyText + "   " + meterText + "   " + tempoText, width / 2.0f, dp(18), textPaint);
 
-        textPaint.setTextSize(dp(10));
+        textPaint.setTextSize(dp(9));
         textPaint.setColor(color(R.color.muted));
-        canvas.drawText("简谱动态跟随", width / 2.0f, dp(38), textPaint);
+        canvas.drawText("动态跟随", width / 2.0f, dp(31), textPaint);
     }
 
     private void drawScoreRows(Canvas canvas, int width, int height) {
-        float left = dp(18);
-        float right = width - dp(18);
-        float top = dp(52);
-        float bottom = height - dp(30);
+        float left = dp(12);
+        float right = width - dp(12);
+        float top = dp(40);
+        float bottom = height - dp(24);
         float rowHeight = (bottom - top) / VISIBLE_ROWS;
         double beatsPerMeasure = Math.max(1, song.meterBeats);
         double beatsPerRow = beatsPerMeasure * visibleMeasuresPerRow(width);
@@ -147,7 +147,7 @@ public final class DynamicScoreView extends View {
         for (int measure = firstMeasure; measure <= lastMeasure; measure++) {
             double beat = measure * beatsPerMeasure;
             float x = beatToX(beat, rowStart, beatsPerRow, left, right);
-            canvas.drawLine(x, rowTop + dp(6), x, rowTop + rowHeight - dp(6), linePaint);
+            canvas.drawLine(x, rowTop + dp(4), x, rowTop + rowHeight - dp(4), linePaint);
         }
     }
 
@@ -173,12 +173,12 @@ public final class DynamicScoreView extends View {
         int noteColor = current ? color(R.color.cinnabar) : passed ? color(R.color.accent_dark) : color(R.color.ink);
 
         if (current) {
-            rect.set(centerX - dp(17), digitY - dp(27), centerX + dp(17), digitY + dp(10));
+            rect.set(centerX - dp(13), digitY - dp(22), centerX + dp(13), digitY + dp(8));
             notePaint.setColor(color(R.color.accent_soft));
             canvas.drawOval(rect, notePaint);
             linePaint.setColor(color(R.color.cinnabar));
-            linePaint.setStrokeWidth(dp(2));
-            canvas.drawLine(centerX, rowTop + dp(7), centerX, rowTop + rowHeight - dp(5), linePaint);
+            linePaint.setStrokeWidth(dp(1.5f));
+            canvas.drawLine(centerX, rowTop + dp(5), centerX, rowTop + rowHeight - dp(4), linePaint);
         }
 
         drawJianpuLabel(canvas, note, centerX, digitY, noteColor);
@@ -199,12 +199,12 @@ public final class DynamicScoreView extends View {
         textPaint.setColor(note.rest ? color(R.color.muted) : color);
         if (!accidental.isEmpty()) {
             textPaint.setTextAlign(Paint.Align.RIGHT);
-            textPaint.setTextSize(dp(13));
-            canvas.drawText(accidental, centerX - dp(5), digitY - dp(6), textPaint);
-            centerX += dp(4);
+            textPaint.setTextSize(dp(10));
+            canvas.drawText(accidental, centerX - dp(4), digitY - dp(5), textPaint);
+            centerX += dp(3);
         }
         textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(dp(25));
+        textPaint.setTextSize(dp(18));
         canvas.drawText(digit, centerX, digitY, textPaint);
     }
 
@@ -221,9 +221,9 @@ public final class DynamicScoreView extends View {
         notePaint.setColor(color);
         for (int i = 0; i < dots; i++) {
             float y = octaveOffset > 0
-                    ? digitY - dp(29 + i * 6)
-                    : digitY + dp(9 + i * 6);
-            canvas.drawCircle(centerX, y, dp(2), notePaint);
+                    ? digitY - dp(22 + i * 5)
+                    : digitY + dp(7 + i * 5);
+            canvas.drawCircle(centerX, y, dp(1.5f), notePaint);
         }
     }
 
@@ -237,23 +237,23 @@ public final class DynamicScoreView extends View {
             int color
     ) {
         linePaint.setColor(color);
-        linePaint.setStrokeWidth(dp(2));
+        linePaint.setStrokeWidth(dp(1.5f));
 
         int underlineCount = underlineCount(note.beats);
-        float underlineY = digitY + dp(octaveOffset(note) < 0 ? 22 : 16);
+        float underlineY = digitY + dp(octaveOffset(note) < 0 ? 18 : 12);
         for (int i = 0; i < underlineCount; i++) {
-            canvas.drawLine(centerX - dp(11), underlineY + dp(i * 5), centerX + dp(11), underlineY + dp(i * 5), linePaint);
+            canvas.drawLine(centerX - dp(8), underlineY + dp(i * 4), centerX + dp(8), underlineY + dp(i * 4), linePaint);
         }
 
         if (note.beats > 1.0 + EPSILON) {
-            float dashStart = Math.max(centerX + dp(16), xStart + dp(18));
-            float dashEnd = Math.max(dashStart + dp(12), xEnd - dp(6));
-            canvas.drawLine(dashStart, digitY - dp(8), dashEnd, digitY - dp(8), linePaint);
+            float dashStart = Math.max(centerX + dp(12), xStart + dp(14));
+            float dashEnd = Math.max(dashStart + dp(8), xEnd - dp(4));
+            canvas.drawLine(dashStart, digitY - dp(6), dashEnd, digitY - dp(6), linePaint);
         }
 
         if (isDottedDuration(note.beats)) {
             notePaint.setColor(color);
-            canvas.drawCircle(centerX + dp(14), digitY - dp(7), dp(2), notePaint);
+            canvas.drawCircle(centerX + dp(10), digitY - dp(5), dp(1.5f), notePaint);
         }
     }
 
@@ -262,8 +262,8 @@ public final class DynamicScoreView extends View {
         float progress = (float) Math.min(1.0, beatPosition / totalBeats);
         float left = dp(14);
         float right = width - dp(14);
-        float y = height - dp(13);
-        linePaint.setStrokeWidth(dp(4));
+        float y = height - dp(10);
+        linePaint.setStrokeWidth(dp(3));
         linePaint.setColor(color(R.color.line));
         canvas.drawLine(left, y, right, y, linePaint);
         linePaint.setColor(color(R.color.cinnabar));
@@ -290,7 +290,10 @@ public final class DynamicScoreView extends View {
     }
 
     private int visibleMeasuresPerRow(int width) {
-        return width < dp(380) ? 1 : 2;
+        if (width < dp(520)) {
+            return 2;
+        }
+        return 3;
     }
 
     private float beatToX(double beat, double rowStart, double beatsPerRow, float left, float right) {
