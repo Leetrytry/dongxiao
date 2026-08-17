@@ -7,7 +7,7 @@ import android.media.MediaRecorder;
 
 public final class AudioAnalyzer {
     public interface Listener {
-        void onAudioFrame(PitchResult result, int sampleRate, long timestampMs);
+        void onAudioFrame(PitchResult result, float[] samples, int sampleRate, long timestampMs);
 
         void onAudioError(String message);
     }
@@ -103,7 +103,7 @@ public final class AudioAnalyzer {
                 }
 
                 PitchResult result = PitchDetector.detect(samples, sampleRate);
-                listener.onAudioFrame(result, sampleRate, System.currentTimeMillis());
+                listener.onAudioFrame(result, samples, sampleRate, System.currentTimeMillis());
             }
         } catch (IllegalStateException error) {
             listener.onAudioError("录音过程中断：" + error.getMessage());

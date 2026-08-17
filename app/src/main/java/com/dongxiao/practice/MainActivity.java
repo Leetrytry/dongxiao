@@ -23,6 +23,7 @@ import com.dongxiao.practice.practice.PracticeAnalyzer;
 import com.dongxiao.practice.practice.PracticeMode;
 import com.dongxiao.practice.practice.PracticeStats;
 import com.dongxiao.practice.ui.TunerView;
+import com.dongxiao.practice.ui.WaveformView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,7 @@ public final class MainActivity extends Activity {
     private CheckBox autoTargetCheck;
     private Button startButton;
     private TunerView tunerView;
+    private WaveformView waveformView;
 
     private final PracticeAnalyzer practiceAnalyzer = new PracticeAnalyzer();
     private final List<TargetNote> targets = new ArrayList<>();
@@ -91,6 +93,7 @@ public final class MainActivity extends Activity {
         autoTargetCheck = findViewById(R.id.autoTargetCheck);
         startButton = findViewById(R.id.startButton);
         tunerView = findViewById(R.id.tunerView);
+        waveformView = findViewById(R.id.waveformView);
     }
 
     private void setupSpinners() {
@@ -198,8 +201,11 @@ public final class MainActivity extends Activity {
         practiceAnalyzer.reset();
         audioAnalyzer = new AudioAnalyzer(new AudioAnalyzer.Listener() {
             @Override
-            public void onAudioFrame(PitchResult result, int sampleRate, long timestampMs) {
-                runOnUiThread(() -> handleAudioFrame(result, sampleRate, timestampMs));
+            public void onAudioFrame(PitchResult result, float[] samples, int sampleRate, long timestampMs) {
+                runOnUiThread(() -> {
+                    waveformView.setSamples(samples);
+                    handleAudioFrame(result, sampleRate, timestampMs);
+                });
             }
 
             @Override
@@ -208,6 +214,7 @@ public final class MainActivity extends Activity {
                     statusText.setText(message);
                     startButton.setText("开始拾音");
                     tunerView.setReading(0.0, false, "麦克风不可用");
+                    waveformView.clear();
                 });
             }
         });
@@ -225,6 +232,9 @@ public final class MainActivity extends Activity {
         }
         startButton.setText("开始拾音");
         statusText.setText("拾音已停止。");
+        if (waveformView != null) {
+            waveformView.clear();
+        }
     }
 
     private void handleAudioFrame(PitchResult result, int sampleRate, long timestampMs) {

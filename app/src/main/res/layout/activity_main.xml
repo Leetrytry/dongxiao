@@ -130,6 +130,22 @@
             android:elevation="1dp" />
 
         <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="实时波形"
+            android:textColor="@color/muted"
+            android:textSize="13sp" />
+
+        <com.dongxiao.practice.ui.WaveformView
+            android:id="@+id/waveformView"
+            android:layout_width="match_parent"
+            android:layout_height="96dp"
+            android:layout_marginTop="6dp"
+            android:background="@color/surface"
+            android:elevation="1dp" />
+
+        <TextView
             android:id="@+id/pitchText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
