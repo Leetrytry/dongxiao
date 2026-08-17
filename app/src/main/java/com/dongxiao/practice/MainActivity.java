@@ -367,7 +367,7 @@ public final class MainActivity extends Activity {
         ));
 
         TextView description = new TextView(this);
-        description.setText("播放合成伴奏，同时按节拍高亮动态谱子，适合跟伴奏练完整乐句。");
+        description.setText("播放合成伴奏，同时按节拍高亮动态简谱，适合跟伴奏练完整乐句。");
         description.setTextColor(getColorCompat(R.color.muted));
         description.setTextSize(13.0f);
         description.setLineSpacing(dp(2), 1.0f);

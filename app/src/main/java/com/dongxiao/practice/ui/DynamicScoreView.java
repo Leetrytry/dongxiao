@@ -13,8 +13,11 @@ import com.dongxiao.practice.song.PracticeSong;
 import com.dongxiao.practice.song.SongNote;
 
 public final class DynamicScoreView extends View {
+    private static final int VISIBLE_ROWS = 2;
+    private static final double EPSILON = 0.03;
+
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint cellPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint notePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
 
@@ -35,8 +38,8 @@ public final class DynamicScoreView extends View {
     private void init() {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setFakeBoldText(true);
-        linePaint.setStrokeWidth(dp(2));
         linePaint.setStrokeCap(Paint.Cap.ROUND);
+        notePaint.setStyle(Paint.Style.FILL);
     }
 
     public void setSong(PracticeSong song) {
@@ -61,62 +64,205 @@ public final class DynamicScoreView extends View {
             return;
         }
 
-        drawPaperLines(canvas, width, height);
+        drawPaper(canvas, width, height);
         if (song == null || song.notes.isEmpty()) {
             drawEmpty(canvas, width, height);
             return;
         }
 
-        int columns = Math.max(4, Math.min(8, width / dp(54)));
-        float gap = dp(6);
-        float cellWidth = (width - gap * (columns + 1)) / columns;
-        float cellHeight = dp(46);
-        float top = dp(20);
-
-        for (int i = 0; i < song.notes.size(); i++) {
-            int row = i / columns;
-            int col = i % columns;
-            float left = gap + col * (cellWidth + gap);
-            float cellTop = top + row * (cellHeight + gap);
-            drawNote(canvas, song.notes.get(i), i, left, cellTop, cellWidth, cellHeight);
-        }
+        drawHeader(canvas, width);
+        drawScoreRows(canvas, width, height);
         drawProgress(canvas, width, height);
     }
 
-    private void drawPaperLines(Canvas canvas, int width, int height) {
+    private void drawPaper(Canvas canvas, int width, int height) {
         linePaint.setColor(color(R.color.line));
         linePaint.setStrokeWidth(dp(1));
-        for (int y = dp(28); y < height - dp(10); y += dp(34)) {
-            canvas.drawLine(dp(10), y, width - dp(10), y, linePaint);
+        for (int y = dp(44); y < height - dp(14); y += dp(32)) {
+            canvas.drawLine(dp(12), y, width - dp(12), y, linePaint);
         }
     }
 
-    private void drawNote(Canvas canvas, SongNote note, int index, float left, float top, float width, float height) {
-        boolean current = index == currentNoteIndex;
-        boolean passed = index < currentNoteIndex;
-        rect.set(left, top, left + width, top + height);
-        cellPaint.setStyle(Paint.Style.FILL);
-        cellPaint.setColor(current ? color(R.color.cinnabar) : passed ? color(R.color.accent_soft) : color(R.color.paper));
-        canvas.drawRoundRect(rect, dp(8), dp(8), cellPaint);
-        cellPaint.setStyle(Paint.Style.STROKE);
-        cellPaint.setStrokeWidth(current ? dp(2) : dp(1));
-        cellPaint.setColor(current ? color(R.color.cinnabar_dark) : color(R.color.gold));
-        canvas.drawRoundRect(rect, dp(8), dp(8), cellPaint);
+    private void drawHeader(Canvas canvas, int width) {
+        textPaint.setFakeBoldText(true);
+        textPaint.setTextSize(dp(13));
+        textPaint.setColor(color(R.color.ink));
+        String keyText = "1=" + keyName(song.keyLabel);
+        String meterText = song.meterBeats + "/4";
+        String tempoText = song.tempoBpm + " BPM";
+        canvas.drawText(keyText + "    " + meterText + "    " + tempoText, width / 2.0f, dp(22), textPaint);
 
-        textPaint.setTextSize(dp(15));
-        textPaint.setColor(current ? color(R.color.paper) : color(R.color.ink));
-        canvas.drawText(note.label, left + width / 2.0f, top + dp(22), textPaint);
         textPaint.setTextSize(dp(10));
-        textPaint.setColor(current ? color(R.color.paper_deep) : color(R.color.muted));
-        canvas.drawText(beatText(note.beats), left + width / 2.0f, top + dp(38), textPaint);
+        textPaint.setColor(color(R.color.muted));
+        canvas.drawText("简谱动态跟随", width / 2.0f, dp(38), textPaint);
+    }
+
+    private void drawScoreRows(Canvas canvas, int width, int height) {
+        float left = dp(18);
+        float right = width - dp(18);
+        float top = dp(52);
+        float bottom = height - dp(30);
+        float rowHeight = (bottom - top) / VISIBLE_ROWS;
+        double beatsPerMeasure = Math.max(1, song.meterBeats);
+        double beatsPerRow = beatsPerMeasure * visibleMeasuresPerRow(width);
+        double visibleStart = visibleStartBeat(beatsPerMeasure, beatsPerRow * VISIBLE_ROWS);
+
+        for (int row = 0; row < VISIBLE_ROWS; row++) {
+            double rowStart = visibleStart + row * beatsPerRow;
+            float rowTop = top + row * rowHeight;
+            drawMeasureLines(canvas, rowStart, beatsPerRow, beatsPerMeasure, left, right, rowTop, rowHeight);
+        }
+
+        double noteStart = 0.0;
+        for (int i = 0; i < song.notes.size(); i++) {
+            SongNote note = song.notes.get(i);
+            double noteEnd = noteStart + note.beats;
+            for (int row = 0; row < VISIBLE_ROWS; row++) {
+                double rowStart = visibleStart + row * beatsPerRow;
+                double rowEnd = rowStart + beatsPerRow;
+                if (noteStart < rowEnd && noteEnd > rowStart) {
+                    float rowTop = top + row * rowHeight;
+                    drawNote(canvas, note, i, noteStart, noteEnd, rowStart, beatsPerRow, left, right, rowTop, rowHeight);
+                }
+            }
+            noteStart = noteEnd;
+        }
+    }
+
+    private void drawMeasureLines(
+            Canvas canvas,
+            double rowStart,
+            double beatsPerRow,
+            double beatsPerMeasure,
+            float left,
+            float right,
+            float rowTop,
+            float rowHeight
+    ) {
+        linePaint.setStrokeWidth(dp(1));
+        linePaint.setColor(color(R.color.line));
+
+        int firstMeasure = (int) Math.ceil(rowStart / beatsPerMeasure);
+        int lastMeasure = (int) Math.floor((rowStart + beatsPerRow) / beatsPerMeasure);
+        for (int measure = firstMeasure; measure <= lastMeasure; measure++) {
+            double beat = measure * beatsPerMeasure;
+            float x = beatToX(beat, rowStart, beatsPerRow, left, right);
+            canvas.drawLine(x, rowTop + dp(6), x, rowTop + rowHeight - dp(6), linePaint);
+        }
+    }
+
+    private void drawNote(
+            Canvas canvas,
+            SongNote note,
+            int index,
+            double noteStart,
+            double noteEnd,
+            double rowStart,
+            double beatsPerRow,
+            float left,
+            float right,
+            float rowTop,
+            float rowHeight
+    ) {
+        float xStart = beatToX(Math.max(noteStart, rowStart), rowStart, beatsPerRow, left, right);
+        float xEnd = beatToX(Math.min(noteEnd, rowStart + beatsPerRow), rowStart, beatsPerRow, left, right);
+        float centerX = (xStart + xEnd) / 2.0f;
+        float digitY = rowTop + rowHeight * 0.55f;
+        boolean current = index == currentNoteIndex;
+        boolean passed = currentNoteIndex >= 0 && index < currentNoteIndex;
+        int noteColor = current ? color(R.color.cinnabar) : passed ? color(R.color.accent_dark) : color(R.color.ink);
+
+        if (current) {
+            rect.set(centerX - dp(17), digitY - dp(27), centerX + dp(17), digitY + dp(10));
+            notePaint.setColor(color(R.color.accent_soft));
+            canvas.drawOval(rect, notePaint);
+            linePaint.setColor(color(R.color.cinnabar));
+            linePaint.setStrokeWidth(dp(2));
+            canvas.drawLine(centerX, rowTop + dp(7), centerX, rowTop + rowHeight - dp(5), linePaint);
+        }
+
+        drawJianpuLabel(canvas, note, centerX, digitY, noteColor);
+        drawOctaveDots(canvas, note, centerX, digitY, noteColor);
+        drawDurationMarks(canvas, note, xStart, xEnd, centerX, digitY, noteColor);
+    }
+
+    private void drawJianpuLabel(Canvas canvas, SongNote note, float centerX, float digitY, int color) {
+        String label = note.rest ? "0" : note.label;
+        String accidental = "";
+        String digit = label;
+        if (label.length() > 1 && (label.startsWith("#") || label.startsWith("b"))) {
+            accidental = label.substring(0, 1);
+            digit = label.substring(1);
+        }
+
+        textPaint.setFakeBoldText(true);
+        textPaint.setColor(note.rest ? color(R.color.muted) : color);
+        if (!accidental.isEmpty()) {
+            textPaint.setTextAlign(Paint.Align.RIGHT);
+            textPaint.setTextSize(dp(13));
+            canvas.drawText(accidental, centerX - dp(5), digitY - dp(6), textPaint);
+            centerX += dp(4);
+        }
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(dp(25));
+        canvas.drawText(digit, centerX, digitY, textPaint);
+    }
+
+    private void drawOctaveDots(Canvas canvas, SongNote note, float centerX, float digitY, int color) {
+        if (note.rest) {
+            return;
+        }
+        int octaveOffset = octaveOffset(note);
+        int dots = Math.min(3, Math.abs(octaveOffset));
+        if (dots == 0) {
+            return;
+        }
+
+        notePaint.setColor(color);
+        for (int i = 0; i < dots; i++) {
+            float y = octaveOffset > 0
+                    ? digitY - dp(29 + i * 6)
+                    : digitY + dp(9 + i * 6);
+            canvas.drawCircle(centerX, y, dp(2), notePaint);
+        }
+    }
+
+    private void drawDurationMarks(
+            Canvas canvas,
+            SongNote note,
+            float xStart,
+            float xEnd,
+            float centerX,
+            float digitY,
+            int color
+    ) {
+        linePaint.setColor(color);
+        linePaint.setStrokeWidth(dp(2));
+
+        int underlineCount = underlineCount(note.beats);
+        float underlineY = digitY + dp(octaveOffset(note) < 0 ? 22 : 16);
+        for (int i = 0; i < underlineCount; i++) {
+            canvas.drawLine(centerX - dp(11), underlineY + dp(i * 5), centerX + dp(11), underlineY + dp(i * 5), linePaint);
+        }
+
+        if (note.beats > 1.0 + EPSILON) {
+            float dashStart = Math.max(centerX + dp(16), xStart + dp(18));
+            float dashEnd = Math.max(dashStart + dp(12), xEnd - dp(6));
+            canvas.drawLine(dashStart, digitY - dp(8), dashEnd, digitY - dp(8), linePaint);
+        }
+
+        if (isDottedDuration(note.beats)) {
+            notePaint.setColor(color);
+            canvas.drawCircle(centerX + dp(14), digitY - dp(7), dp(2), notePaint);
+        }
     }
 
     private void drawProgress(Canvas canvas, int width, int height) {
         double totalBeats = Math.max(1.0, song.totalBeats());
         float progress = (float) Math.min(1.0, beatPosition / totalBeats);
-        float left = dp(12);
-        float right = width - dp(12);
-        float y = height - dp(12);
+        float left = dp(14);
+        float right = width - dp(14);
+        float y = height - dp(13);
         linePaint.setStrokeWidth(dp(4));
         linePaint.setColor(color(R.color.line));
         canvas.drawLine(left, y, right, y, linePaint);
@@ -125,16 +271,66 @@ public final class DynamicScoreView extends View {
     }
 
     private void drawEmpty(Canvas canvas, int width, int height) {
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setFakeBoldText(false);
         textPaint.setTextSize(dp(14));
         textPaint.setColor(color(R.color.muted));
         canvas.drawText("请选择曲目", width / 2.0f, height / 2.0f, textPaint);
     }
 
-    private String beatText(double beats) {
-        if (Math.abs(beats - Math.round(beats)) < 0.01) {
-            return ((int) Math.round(beats)) + "拍";
+    private double visibleStartBeat(double beatsPerMeasure, double visibleBeats) {
+        double totalBeats = song.totalBeats();
+        double activeBeat = currentNoteIndex >= 0 ? beatPosition : 0.0;
+        int currentMeasure = (int) Math.floor(activeBeat / beatsPerMeasure);
+        double start = Math.max(0.0, (currentMeasure - 1) * beatsPerMeasure);
+        if (start + visibleBeats > totalBeats) {
+            start = Math.max(0.0, totalBeats - visibleBeats);
         }
-        return beats + "拍";
+        return start;
+    }
+
+    private int visibleMeasuresPerRow(int width) {
+        return width < dp(380) ? 1 : 2;
+    }
+
+    private float beatToX(double beat, double rowStart, double beatsPerRow, float left, float right) {
+        double fraction = (beat - rowStart) / beatsPerRow;
+        return (float) (left + Math.max(0.0, Math.min(1.0, fraction)) * (right - left));
+    }
+
+    private int octaveOffset(SongNote note) {
+        if (song == null || note.rest) {
+            return 0;
+        }
+        return Math.floorDiv(note.midi - song.rootMidi, 12);
+    }
+
+    private int underlineCount(double beats) {
+        if (beats <= 0.125 + EPSILON) {
+            return 3;
+        }
+        if (beats <= 0.25 + EPSILON) {
+            return 2;
+        }
+        if (beats <= 0.5 + EPSILON) {
+            return 1;
+        }
+        return 0;
+    }
+
+    private boolean isDottedDuration(double beats) {
+        return near(beats, 0.375) || near(beats, 0.75) || near(beats, 1.5);
+    }
+
+    private boolean near(double value, double target) {
+        return Math.abs(value - target) < EPSILON;
+    }
+
+    private String keyName(String keyLabel) {
+        if (keyLabel == null || keyLabel.isEmpty()) {
+            return "?";
+        }
+        return keyLabel.replace("调", "");
     }
 
     private int color(int colorResId) {

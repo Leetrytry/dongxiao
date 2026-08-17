@@ -648,7 +648,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="6dp"
                         android:layout_weight="1"
-                        android:text="动态谱子"
+                        android:text="动态简谱"
                         android:textColor="@color/ink"
                         android:textSize="16sp"
                         android:textStyle="bold" />
