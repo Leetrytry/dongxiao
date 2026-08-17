@@ -36,6 +36,9 @@ import com.dongxiao.practice.practice.PracticeStats;
 import com.dongxiao.practice.song.AbcSongImporter;
 import com.dongxiao.practice.song.ImageScore;
 import com.dongxiao.practice.song.ImageScoreRepository;
+import com.dongxiao.practice.song.JianpuTextCatalog;
+import com.dongxiao.practice.song.JianpuTextSongImporter;
+import com.dongxiao.practice.song.JianpuTextSource;
 import com.dongxiao.practice.song.LocalSongStore;
 import com.dongxiao.practice.song.OnlineSongCatalog;
 import com.dongxiao.practice.song.OnlineSongResource;
@@ -441,6 +444,7 @@ public final class MainActivity extends Activity {
         });
 
         localSongs.clear();
+        songs.addAll(loadBundledJianpuSongs());
         localSongs.addAll(LocalSongStore.load(this));
         songs.addAll(localSongs);
 
@@ -475,7 +479,7 @@ public final class MainActivity extends Activity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 imageScorePageIndex = 0;
-                updateSelectedImageScore();
+                updateSelectedImageScore(true);
             }
 
             @Override
@@ -490,7 +494,7 @@ public final class MainActivity extends Activity {
         imageScorePrevButton.setOnClickListener(view -> moveImageScorePage(-1));
         imageScoreNextButton.setOnClickListener(view -> moveImageScorePage(1));
         updateSelectedOnlineResource();
-        updateSelectedImageScore();
+        updateSelectedImageScore(true);
         updateSelectedSong();
     }
 
@@ -545,9 +549,29 @@ public final class MainActivity extends Activity {
         }
         songTitleText.setText(song.title);
         songMetaText.setText(song.metaText());
-        songStatusText.setText("伴奏会按谱面节奏播放，当前音符会同步高亮。");
+        if (song.title.startsWith("图片转谱 · ")) {
+            songStatusText.setText("该曲由本地图片谱 OCR 转换，可播放并动态高亮；建议对照下方图片谱校正细节。");
+        } else {
+            songStatusText.setText("伴奏会按谱面节奏播放，当前音符会同步高亮。");
+        }
         dynamicScoreView.setSong(song);
         songPlayButton.setText("播放伴奏");
+    }
+
+    private List<PracticeSong> loadBundledJianpuSongs() {
+        List<PracticeSong> convertedSongs = new ArrayList<>();
+        for (JianpuTextSource source : JianpuTextCatalog.defaults()) {
+            try {
+                StringBuilder builder = new StringBuilder();
+                for (String assetPath : source.assetPaths) {
+                    builder.append(readAssetText(assetPath)).append('\n');
+                }
+                convertedSongs.add(JianpuTextSongImporter.parse(source, builder.toString()));
+            } catch (IOException | IllegalArgumentException ignored) {
+                // A single OCR source should not prevent the rest of the bundled score library from loading.
+            }
+        }
+        return convertedSongs;
     }
 
     private void toggleSongPlayback() {
@@ -656,7 +680,7 @@ public final class MainActivity extends Activity {
         resourceImportButton.setEnabled(resource.importable && !importingSong);
     }
 
-    private void updateSelectedImageScore() {
+    private void updateSelectedImageScore(boolean syncSongSelection) {
         ImageScore imageScore = selectedImageScore();
         if (imageScore == null) {
             imageScoreView.setImageDrawable(null);
@@ -681,6 +705,21 @@ public final class MainActivity extends Activity {
             imageScoreView.setImageDrawable(null);
             imageScorePageText.setText("图片谱加载失败");
         }
+        if (syncSongSelection) {
+            selectConvertedSongForImageScore(imageScore);
+        }
+    }
+
+    private void selectConvertedSongForImageScore(ImageScore imageScore) {
+        String convertedTitle = "图片转谱 · " + imageScore.title;
+        for (int i = 0; i < songs.size(); i++) {
+            if (songs.get(i).title.equals(convertedTitle)) {
+                if (songSpinner.getSelectedItemPosition() != i) {
+                    songSpinner.setSelection(i);
+                }
+                return;
+            }
+        }
     }
 
     private void moveImageScorePage(int delta) {
@@ -689,7 +728,7 @@ public final class MainActivity extends Activity {
             return;
         }
         imageScorePageIndex = Math.max(0, Math.min(imageScorePageIndex + delta, imageScore.pageCount() - 1));
-        updateSelectedImageScore();
+        updateSelectedImageScore(false);
     }
 
     private void setSongImportControlsEnabled(boolean enabled) {
@@ -742,6 +781,19 @@ public final class MainActivity extends Activity {
             if (connection != null) {
                 connection.disconnect();
             }
+        }
+    }
+
+    private String readAssetText(String assetPath) throws IOException {
+        try (InputStream inputStream = getAssets().open(assetPath);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            StringBuilder builder = new StringBuilder();
+            char[] buffer = new char[4096];
+            int read;
+            while ((read = reader.read(buffer)) != -1) {
+                builder.append(buffer, 0, read);
+            }
+            return builder.toString();
         }
     }
 
