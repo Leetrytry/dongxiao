@@ -3,13 +3,16 @@ package com.dongxiao.practice;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -37,11 +40,15 @@ public final class MainActivity extends Activity {
     private TextView pitchText;
     private TextView detailText;
     private TextView metricText;
+    private TextView modeTitleText;
+    private LinearLayout homeContainer;
+    private LinearLayout practiceContainer;
+    private LinearLayout modeList;
     private Spinner tuningSpinner;
     private Spinner fingeringSpinner;
     private Spinner targetSpinner;
-    private Spinner practiceSpinner;
     private CheckBox autoTargetCheck;
+    private Button backButton;
     private Button startButton;
     private TunerView tunerView;
     private WaveformView waveformView;
@@ -49,6 +56,7 @@ public final class MainActivity extends Activity {
     private final PracticeAnalyzer practiceAnalyzer = new PracticeAnalyzer();
     private final List<TargetNote> targets = new ArrayList<>();
     private AudioAnalyzer audioAnalyzer;
+    private PracticeMode currentPracticeMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,8 +65,9 @@ public final class MainActivity extends Activity {
 
         bindViews();
         setupSpinners();
+        setupPracticeModes();
         setupStartButton();
-        updateInstruction();
+        showHome();
     }
 
     @Override
@@ -86,11 +95,15 @@ public final class MainActivity extends Activity {
         pitchText = findViewById(R.id.pitchText);
         detailText = findViewById(R.id.detailText);
         metricText = findViewById(R.id.metricText);
+        modeTitleText = findViewById(R.id.modeTitleText);
+        homeContainer = findViewById(R.id.homeContainer);
+        practiceContainer = findViewById(R.id.practiceContainer);
+        modeList = findViewById(R.id.modeList);
         tuningSpinner = findViewById(R.id.tuningSpinner);
         fingeringSpinner = findViewById(R.id.fingeringSpinner);
         targetSpinner = findViewById(R.id.targetSpinner);
-        practiceSpinner = findViewById(R.id.practiceSpinner);
         autoTargetCheck = findViewById(R.id.autoTargetCheck);
+        backButton = findViewById(R.id.backButton);
         startButton = findViewById(R.id.startButton);
         tunerView = findViewById(R.id.tunerView);
         waveformView = findViewById(R.id.waveformView);
@@ -104,9 +117,6 @@ public final class MainActivity extends Activity {
 
         ArrayAdapter<FingeringMode> fingeringAdapter = createAdapter(FingeringMode.values());
         fingeringSpinner.setAdapter(fingeringAdapter);
-
-        ArrayAdapter<PracticeMode> practiceAdapter = createAdapter(PracticeMode.values());
-        practiceSpinner.setAdapter(practiceAdapter);
 
         AdapterView.OnItemSelectedListener targetRefreshingListener = new AdapterView.OnItemSelectedListener() {
             @Override
@@ -122,19 +132,59 @@ public final class MainActivity extends Activity {
         tuningSpinner.setOnItemSelectedListener(targetRefreshingListener);
         fingeringSpinner.setOnItemSelectedListener(targetRefreshingListener);
 
-        practiceSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                updateInstruction();
-                practiceAnalyzer.reset();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
-
         updateTargets();
+    }
+
+    private void setupPracticeModes() {
+        modeList.removeAllViews();
+        for (PracticeMode mode : PracticeMode.values()) {
+            modeList.addView(createPracticeCard(mode));
+        }
+        backButton.setOnClickListener(view -> showHome());
+    }
+
+    private View createPracticeCard(PracticeMode mode) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(16), dp(14), dp(16), dp(14));
+        card.setBackgroundResource(R.drawable.bg_practice_card);
+        card.setClickable(true);
+        card.setFocusable(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            card.setElevation(dp(1));
+        }
+
+        TextView title = new TextView(this);
+        title.setText(mode.label);
+        title.setTextColor(getColorCompat(R.color.ink));
+        title.setTextSize(18.0f);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        card.addView(title, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        TextView description = new TextView(this);
+        description.setText(mode.instruction);
+        description.setTextColor(getColorCompat(R.color.muted));
+        description.setTextSize(13.0f);
+        description.setLineSpacing(dp(2), 1.0f);
+        LinearLayout.LayoutParams descriptionParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        descriptionParams.topMargin = dp(6);
+        card.addView(description, descriptionParams);
+
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        cardParams.bottomMargin = dp(10);
+        card.setLayoutParams(cardParams);
+        card.setOnClickListener(view -> enterPractice(mode));
+        return card;
     }
 
     private void setupStartButton() {
@@ -147,6 +197,26 @@ public final class MainActivity extends Activity {
         });
     }
 
+    private void showHome() {
+        stopListening();
+        currentPracticeMode = null;
+        homeContainer.setVisibility(View.VISIBLE);
+        practiceContainer.setVisibility(View.GONE);
+    }
+
+    private void enterPractice(PracticeMode mode) {
+        currentPracticeMode = mode;
+        homeContainer.setVisibility(View.GONE);
+        practiceContainer.setVisibility(View.VISIBLE);
+        practiceAnalyzer.reset();
+        updateInstruction();
+        updateTargets();
+        pitchText.setText("未检测到稳定音高");
+        detailText.setText("Hz、音名、cent 偏差和稳定度会显示在这里。");
+        metricText.setText("练习指标等待开始。");
+        waveformView.clear();
+    }
+
     private <T> ArrayAdapter<T> createAdapter(T[] items) {
         ArrayAdapter<T> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -157,6 +227,17 @@ public final class MainActivity extends Activity {
         ArrayAdapter<T> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         return adapter;
+    }
+
+    private int dp(float value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private int getColorCompat(int colorResId) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return getColor(colorResId);
+        }
+        return getResources().getColor(colorResId);
     }
 
     private void updateTargets() {
@@ -183,6 +264,9 @@ public final class MainActivity extends Activity {
 
     private void updateInstruction() {
         PracticeMode mode = selectedPracticeMode();
+        if (mode != null && modeTitleText != null) {
+            modeTitleText.setText(mode.label);
+        }
         if (mode != null && instructionText != null) {
             instructionText.setText(mode.instruction);
         }
@@ -372,8 +456,7 @@ public final class MainActivity extends Activity {
     }
 
     private PracticeMode selectedPracticeMode() {
-        Object item = practiceSpinner.getSelectedItem();
-        return item instanceof PracticeMode ? (PracticeMode) item : null;
+        return currentPracticeMode;
     }
 
     private TargetNote selectedTarget() {
