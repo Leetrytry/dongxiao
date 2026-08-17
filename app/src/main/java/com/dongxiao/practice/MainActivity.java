@@ -69,6 +69,7 @@ public final class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        configureSystemBars();
         bindViews();
         setupSpinners();
         setupPracticeModes();
@@ -115,6 +116,36 @@ public final class MainActivity extends Activity {
         startButton = findViewById(R.id.startButton);
         tunerView = findViewById(R.id.tunerView);
         waveformView = findViewById(R.id.waveformView);
+    }
+
+    private void configureSystemBars() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(getColorCompat(R.color.background));
+            getWindow().setNavigationBarColor(getColorCompat(R.color.background));
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            int flags = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            getWindow().getDecorView().setSystemUiVisibility(flags);
+        }
+
+        View rootView = findViewById(R.id.rootScrollView);
+        int originalLeft = rootView.getPaddingLeft();
+        int originalTop = rootView.getPaddingTop();
+        int originalRight = rootView.getPaddingRight();
+        int originalBottom = rootView.getPaddingBottom();
+        rootView.setOnApplyWindowInsetsListener((view, insets) -> {
+            view.setPadding(
+                    originalLeft + insets.getSystemWindowInsetLeft(),
+                    originalTop + insets.getSystemWindowInsetTop(),
+                    originalRight + insets.getSystemWindowInsetRight(),
+                    originalBottom + insets.getSystemWindowInsetBottom()
+            );
+            return insets;
+        });
+        rootView.requestApplyInsets();
     }
 
     private void setupSpinners() {
