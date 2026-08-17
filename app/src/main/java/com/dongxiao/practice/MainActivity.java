@@ -27,6 +27,10 @@ import com.dongxiao.practice.practice.PracticeMode;
 import com.dongxiao.practice.practice.PracticeScore;
 import com.dongxiao.practice.practice.PracticeSessionScorer;
 import com.dongxiao.practice.practice.PracticeStats;
+import com.dongxiao.practice.song.PracticeSong;
+import com.dongxiao.practice.song.SongPlayer;
+import com.dongxiao.practice.song.SongRepository;
+import com.dongxiao.practice.ui.DynamicScoreView;
 import com.dongxiao.practice.ui.TunerView;
 import com.dongxiao.practice.ui.WaveformView;
 
@@ -45,23 +49,33 @@ public final class MainActivity extends Activity {
     private TextView scoreText;
     private TextView modeTitleText;
     private TextView practiceSummaryText;
+    private TextView songTitleText;
+    private TextView songMetaText;
+    private TextView songStatusText;
     private LinearLayout homeContainer;
     private LinearLayout practiceContainer;
+    private LinearLayout songContainer;
     private LinearLayout modeList;
     private LinearLayout scorePanel;
     private Spinner tuningSpinner;
     private Spinner fingeringSpinner;
     private Spinner targetSpinner;
+    private Spinner songSpinner;
     private CheckBox autoTargetCheck;
     private Button backButton;
     private Button startButton;
+    private Button songBackButton;
+    private Button songPlayButton;
     private TunerView tunerView;
     private WaveformView waveformView;
+    private DynamicScoreView dynamicScoreView;
 
     private final PracticeAnalyzer practiceAnalyzer = new PracticeAnalyzer();
     private final PracticeSessionScorer sessionScorer = new PracticeSessionScorer();
     private final List<TargetNote> targets = new ArrayList<>();
+    private final List<PracticeSong> songs = SongRepository.defaults();
     private AudioAnalyzer audioAnalyzer;
+    private SongPlayer songPlayer;
     private PracticeMode currentPracticeMode;
     private boolean sessionHasFrames = false;
 
@@ -75,6 +89,7 @@ public final class MainActivity extends Activity {
         setupSpinners();
         setupPracticeModes();
         setupStartButton();
+        setupSongPractice();
         showHome();
     }
 
@@ -82,6 +97,7 @@ public final class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         stopListening();
+        stopSongPlayback(true);
     }
 
     @Override
@@ -106,18 +122,26 @@ public final class MainActivity extends Activity {
         scoreText = findViewById(R.id.scoreText);
         modeTitleText = findViewById(R.id.modeTitleText);
         practiceSummaryText = findViewById(R.id.practiceSummaryText);
+        songTitleText = findViewById(R.id.songTitleText);
+        songMetaText = findViewById(R.id.songMetaText);
+        songStatusText = findViewById(R.id.songStatusText);
         homeContainer = findViewById(R.id.homeContainer);
         practiceContainer = findViewById(R.id.practiceContainer);
+        songContainer = findViewById(R.id.songContainer);
         modeList = findViewById(R.id.modeList);
         scorePanel = findViewById(R.id.scorePanel);
         tuningSpinner = findViewById(R.id.tuningSpinner);
         fingeringSpinner = findViewById(R.id.fingeringSpinner);
         targetSpinner = findViewById(R.id.targetSpinner);
+        songSpinner = findViewById(R.id.songSpinner);
         autoTargetCheck = findViewById(R.id.autoTargetCheck);
         backButton = findViewById(R.id.backButton);
         startButton = findViewById(R.id.startButton);
+        songBackButton = findViewById(R.id.songBackButton);
+        songPlayButton = findViewById(R.id.songPlayButton);
         tunerView = findViewById(R.id.tunerView);
         waveformView = findViewById(R.id.waveformView);
+        dynamicScoreView = findViewById(R.id.dynamicScoreView);
     }
 
     private void configureSystemBars() {
@@ -197,6 +221,7 @@ public final class MainActivity extends Activity {
         for (PracticeMode mode : PracticeMode.values()) {
             modeList.addView(createPracticeCard(mode));
         }
+        modeList.addView(createSongPracticeCard());
         backButton.setOnClickListener(view -> showHome());
     }
 
@@ -266,6 +291,72 @@ public final class MainActivity extends Activity {
         return card;
     }
 
+    private View createSongPracticeCard() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(16), dp(14), dp(16), dp(14));
+        card.setBackgroundResource(R.drawable.bg_practice_card);
+        card.setClickable(true);
+        card.setFocusable(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            card.setElevation(dp(1));
+        }
+
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+
+        TextView title = new TextView(this);
+        title.setText("曲目练习");
+        title.setTextColor(getColorCompat(R.color.ink));
+        title.setTextSize(18.0f);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+
+        TextView seal = new TextView(this);
+        seal.setText("曲");
+        seal.setGravity(Gravity.CENTER);
+        seal.setTextColor(getColorCompat(R.color.paper));
+        seal.setTextSize(13.0f);
+        seal.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        seal.setBackgroundResource(R.drawable.bg_seal);
+
+        titleRow.addView(title, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1.0f
+        ));
+        titleRow.addView(seal, new LinearLayout.LayoutParams(
+                dp(28),
+                dp(28)
+        ));
+        card.addView(titleRow, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        TextView description = new TextView(this);
+        description.setText("播放合成伴奏，同时按节拍高亮动态谱子，适合跟伴奏练完整乐句。");
+        description.setTextColor(getColorCompat(R.color.muted));
+        description.setTextSize(13.0f);
+        description.setLineSpacing(dp(2), 1.0f);
+        LinearLayout.LayoutParams descriptionParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        descriptionParams.topMargin = dp(6);
+        card.addView(description, descriptionParams);
+
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        cardParams.bottomMargin = dp(10);
+        card.setLayoutParams(cardParams);
+        card.setOnClickListener(view -> enterSongPractice());
+        return card;
+    }
+
     private void setupStartButton() {
         startButton.setOnClickListener(view -> {
             if (audioAnalyzer != null && audioAnalyzer.isRunning()) {
@@ -276,6 +367,48 @@ public final class MainActivity extends Activity {
         });
     }
 
+    private void setupSongPractice() {
+        songPlayer = new SongPlayer(new SongPlayer.Listener() {
+            @Override
+            public void onProgress(double beatPosition, int noteIndex) {
+                runOnUiThread(() -> dynamicScoreView.setProgress(beatPosition, noteIndex));
+            }
+
+            @Override
+            public void onFinished() {
+                runOnUiThread(() -> {
+                    songPlayButton.setText("播放伴奏");
+                    songStatusText.setText("伴奏播放完成。可以重新播放或选择其他曲目。");
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> {
+                    songPlayButton.setText("播放伴奏");
+                    songStatusText.setText(message);
+                });
+            }
+        });
+
+        ArrayAdapter<PracticeSong> songAdapter = createAdapter(songs);
+        songSpinner.setAdapter(songAdapter);
+        songSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                stopSongPlayback(true);
+                updateSelectedSong();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        songBackButton.setOnClickListener(view -> showHome());
+        songPlayButton.setOnClickListener(view -> toggleSongPlayback());
+        updateSelectedSong();
+    }
+
     private void resetScrollToTop() {
         View rootView = findViewById(R.id.rootScrollView);
         rootView.post(() -> rootView.scrollTo(0, 0));
@@ -283,16 +416,20 @@ public final class MainActivity extends Activity {
 
     private void showHome() {
         stopListening();
+        stopSongPlayback(true);
         currentPracticeMode = null;
         homeContainer.setVisibility(View.VISIBLE);
         practiceContainer.setVisibility(View.GONE);
+        songContainer.setVisibility(View.GONE);
         resetScrollToTop();
     }
 
     private void enterPractice(PracticeMode mode) {
+        stopSongPlayback(true);
         currentPracticeMode = mode;
         homeContainer.setVisibility(View.GONE);
         practiceContainer.setVisibility(View.VISIBLE);
+        songContainer.setVisibility(View.GONE);
         practiceAnalyzer.reset();
         updateInstruction();
         updateTargets();
@@ -304,6 +441,60 @@ public final class MainActivity extends Activity {
         updatePracticeSummary();
         resetScrollToTop();
         waveformView.clear();
+    }
+
+    private void enterSongPractice() {
+        stopListening();
+        currentPracticeMode = null;
+        homeContainer.setVisibility(View.GONE);
+        practiceContainer.setVisibility(View.GONE);
+        songContainer.setVisibility(View.VISIBLE);
+        updateSelectedSong();
+        resetScrollToTop();
+    }
+
+    private void updateSelectedSong() {
+        PracticeSong song = selectedSong();
+        if (song == null) {
+            return;
+        }
+        songTitleText.setText(song.title);
+        songMetaText.setText(song.metaText());
+        songStatusText.setText("伴奏会按谱面节奏播放，当前音符会同步高亮。");
+        dynamicScoreView.setSong(song);
+        songPlayButton.setText("播放伴奏");
+    }
+
+    private void toggleSongPlayback() {
+        if (songPlayer != null && songPlayer.isRunning()) {
+            stopSongPlayback(false);
+            songStatusText.setText("伴奏已停止。");
+            return;
+        }
+        PracticeSong song = selectedSong();
+        if (song == null) {
+            songStatusText.setText("请先选择曲目。");
+            return;
+        }
+        dynamicScoreView.setProgress(0.0, -1);
+        songPlayButton.setText("停止伴奏");
+        songStatusText.setText("伴奏播放中，请跟随高亮音符练习。");
+        songPlayer.start(song);
+    }
+
+    private void stopSongPlayback(boolean resetProgress) {
+        if (songPlayer != null && songPlayer.isRunning()) {
+            songPlayer.stop();
+        }
+        if (songPlayButton != null) {
+            songPlayButton.setText("播放伴奏");
+        }
+        if (resetProgress && dynamicScoreView != null) {
+            PracticeSong song = selectedSong();
+            if (song != null) {
+                dynamicScoreView.setSong(song);
+            }
+        }
     }
 
     private <T> ArrayAdapter<T> createAdapter(T[] items) {
@@ -585,5 +776,10 @@ public final class MainActivity extends Activity {
     private TargetNote selectedTarget() {
         Object item = targetSpinner.getSelectedItem();
         return item instanceof TargetNote ? (TargetNote) item : null;
+    }
+
+    private PracticeSong selectedSong() {
+        Object item = songSpinner.getSelectedItem();
+        return item instanceof PracticeSong ? (PracticeSong) item : null;
     }
 }
