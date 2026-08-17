@@ -36,9 +36,6 @@ import java.util.Locale;
 
 public final class MainActivity extends Activity {
     private static final int REQUEST_RECORD_AUDIO = 1001;
-    private static final int PAGE_MONITOR = 0;
-    private static final int PAGE_SETTINGS = 1;
-    private static final int PAGE_SCORE = 2;
 
     private TextView statusText;
     private TextView instructionText;
@@ -48,23 +45,16 @@ public final class MainActivity extends Activity {
     private TextView scoreText;
     private TextView modeTitleText;
     private TextView practiceSummaryText;
-    private TextView scorePlaceholderText;
     private LinearLayout homeContainer;
     private LinearLayout practiceContainer;
     private LinearLayout modeList;
     private LinearLayout scorePanel;
-    private LinearLayout monitorPage;
-    private LinearLayout settingsPage;
-    private LinearLayout scorePage;
     private Spinner tuningSpinner;
     private Spinner fingeringSpinner;
     private Spinner targetSpinner;
     private CheckBox autoTargetCheck;
     private Button backButton;
     private Button startButton;
-    private Button monitorTabButton;
-    private Button settingsTabButton;
-    private Button scoreTabButton;
     private TunerView tunerView;
     private WaveformView waveformView;
 
@@ -74,7 +64,6 @@ public final class MainActivity extends Activity {
     private AudioAnalyzer audioAnalyzer;
     private PracticeMode currentPracticeMode;
     private boolean sessionHasFrames = false;
-    private int activePracticePage = PAGE_MONITOR;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,7 +75,6 @@ public final class MainActivity extends Activity {
         setupSpinners();
         setupPracticeModes();
         setupStartButton();
-        setupPracticeTabs();
         showHome();
     }
 
@@ -118,23 +106,16 @@ public final class MainActivity extends Activity {
         scoreText = findViewById(R.id.scoreText);
         modeTitleText = findViewById(R.id.modeTitleText);
         practiceSummaryText = findViewById(R.id.practiceSummaryText);
-        scorePlaceholderText = findViewById(R.id.scorePlaceholderText);
         homeContainer = findViewById(R.id.homeContainer);
         practiceContainer = findViewById(R.id.practiceContainer);
         modeList = findViewById(R.id.modeList);
         scorePanel = findViewById(R.id.scorePanel);
-        monitorPage = findViewById(R.id.monitorPage);
-        settingsPage = findViewById(R.id.settingsPage);
-        scorePage = findViewById(R.id.scorePage);
         tuningSpinner = findViewById(R.id.tuningSpinner);
         fingeringSpinner = findViewById(R.id.fingeringSpinner);
         targetSpinner = findViewById(R.id.targetSpinner);
         autoTargetCheck = findViewById(R.id.autoTargetCheck);
         backButton = findViewById(R.id.backButton);
         startButton = findViewById(R.id.startButton);
-        monitorTabButton = findViewById(R.id.monitorTabButton);
-        settingsTabButton = findViewById(R.id.settingsTabButton);
-        scoreTabButton = findViewById(R.id.scoreTabButton);
         tunerView = findViewById(R.id.tunerView);
         waveformView = findViewById(R.id.waveformView);
     }
@@ -206,6 +187,7 @@ public final class MainActivity extends Activity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+        autoTargetCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updatePracticeSummary());
 
         updateTargets();
     }
@@ -272,31 +254,6 @@ public final class MainActivity extends Activity {
         });
     }
 
-    private void setupPracticeTabs() {
-        monitorTabButton.setOnClickListener(view -> showPracticePage(PAGE_MONITOR));
-        settingsTabButton.setOnClickListener(view -> showPracticePage(PAGE_SETTINGS));
-        scoreTabButton.setOnClickListener(view -> showPracticePage(PAGE_SCORE));
-        autoTargetCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updatePracticeSummary());
-        showPracticePage(PAGE_MONITOR);
-    }
-
-    private void showPracticePage(int page) {
-        activePracticePage = page;
-        monitorPage.setVisibility(page == PAGE_MONITOR ? View.VISIBLE : View.GONE);
-        settingsPage.setVisibility(page == PAGE_SETTINGS ? View.VISIBLE : View.GONE);
-        scorePage.setVisibility(page == PAGE_SCORE ? View.VISIBLE : View.GONE);
-        updateTabStyle(monitorTabButton, page == PAGE_MONITOR);
-        updateTabStyle(settingsTabButton, page == PAGE_SETTINGS);
-        updateTabStyle(scoreTabButton, page == PAGE_SCORE);
-        resetScrollToTop();
-    }
-
-    private void updateTabStyle(Button button, boolean selected) {
-        button.setBackgroundResource(selected ? R.drawable.bg_button_primary : R.drawable.bg_button_secondary);
-        button.setTextColor(getColorCompat(selected ? R.color.surface : R.color.ink));
-        button.setTypeface(Typeface.DEFAULT, selected ? Typeface.BOLD : Typeface.NORMAL);
-    }
-
     private void resetScrollToTop() {
         View rootView = findViewById(R.id.rootScrollView);
         rootView.post(() -> rootView.scrollTo(0, 0));
@@ -321,10 +278,9 @@ public final class MainActivity extends Activity {
         detailText.setText("Hz、音名、cent 偏差和稳定度会显示在这里。");
         metricText.setText("练习指标等待开始。");
         scorePanel.setVisibility(View.GONE);
-        scorePlaceholderText.setVisibility(View.VISIBLE);
         scoreText.setText("");
         updatePracticeSummary();
-        showPracticePage(PAGE_MONITOR);
+        resetScrollToTop();
         waveformView.clear();
     }
 
@@ -416,9 +372,8 @@ public final class MainActivity extends Activity {
         sessionScorer.reset();
         sessionHasFrames = false;
         scorePanel.setVisibility(View.GONE);
-        scorePlaceholderText.setVisibility(View.VISIBLE);
         scoreText.setText("");
-        showPracticePage(PAGE_MONITOR);
+        resetScrollToTop();
         audioAnalyzer = new AudioAnalyzer(new AudioAnalyzer.Listener() {
             @Override
             public void onAudioFrame(PitchResult result, float[] samples, int sampleRate, long timestampMs) {
@@ -455,10 +410,8 @@ public final class MainActivity extends Activity {
         if (shouldScore) {
             PracticeScore score = sessionScorer.finish(currentPracticeMode);
             scoreText.setText(score.format());
-            scorePlaceholderText.setVisibility(View.GONE);
             scorePanel.setVisibility(View.VISIBLE);
             statusText.setText("本次练习已结束，评分已生成。");
-            showPracticePage(PAGE_SCORE);
         } else {
             statusText.setText("拾音已停止。");
         }
