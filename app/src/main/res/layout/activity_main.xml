@@ -769,7 +769,7 @@
                 android:layout_marginTop="6dp"
                 android:background="@drawable/bg_summary_strip"
                 android:lineSpacingExtra="2dp"
-                android:text="伴奏会按谱面节奏播放，当前音符会同步高亮。"
+                android:text="智能伴奏会按谱面节奏播放，当前音符会同步高亮。"
                 android:textColor="@color/muted"
                 android:textSize="13sp" />
         </LinearLayout>

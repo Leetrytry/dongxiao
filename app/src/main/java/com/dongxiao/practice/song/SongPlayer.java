@@ -18,6 +18,7 @@ public final class SongPlayer {
     private static final int SAMPLE_RATE = 44100;
     private static final int CHUNK_FRAMES = 512;
     private static final double TWO_PI = Math.PI * 2.0;
+    private static final int[] MAJOR_SCALE = {0, 2, 4, 5, 7, 9, 11};
 
     private final Listener listener;
     private volatile boolean running;
@@ -135,13 +136,78 @@ public final class SongPlayer {
         double localSeconds = Math.max(0.0, (beat - noteStartBeat) * secondsPerBeat);
         double noteSeconds = Math.max(0.08, note.beats * secondsPerBeat);
 
-        double melody = note.rest ? 0.0 : Math.sin(TWO_PI * MusicTheory.frequencyForMidi(note.midi) * time)
-                * pluckEnvelope(localSeconds, noteSeconds) * 0.16;
-        double root = Math.sin(TWO_PI * MusicTheory.frequencyForMidi(song.rootMidi - 12) * time) * 0.08;
-        double fifth = Math.sin(TWO_PI * MusicTheory.frequencyForMidi(song.rootMidi - 5) * time) * 0.05;
-        double pulse = beatPulse(beat) * 0.05;
-        double sample = softClip(melody + root + fifth + pulse);
+        int[] chord = chordFor(song, note);
+        double chordPad = chordPad(chord, time) * 0.09;
+        double arpeggio = arpeggio(chord, time, beat) * 0.11;
+        double bass = bassPulse(chord[0] - 12, time, beat) * 0.12;
+        double pulse = beatPulse(beat) * 0.04;
+        double melodyGuide = note.rest ? 0.0 : Math.sin(TWO_PI * MusicTheory.frequencyForMidi(note.midi) * time)
+                * pluckEnvelope(localSeconds, noteSeconds) * 0.05;
+        double sample = softClip(chordPad + arpeggio + bass + pulse + melodyGuide);
         return (short) Math.round(sample * Short.MAX_VALUE);
+    }
+
+    private static int[] chordFor(PracticeSong song, SongNote note) {
+        int degree = degreeFromLabel(note.label);
+        int rootDegree;
+        if (degree == 2 || degree == 4 || degree == 6) {
+            rootDegree = 4;
+        } else if (degree == 7) {
+            rootDegree = 5;
+        } else {
+            rootDegree = 1;
+        }
+        int root = scaleMidi(song.rootMidi, rootDegree, -1);
+        return new int[]{
+                root,
+                root + 4,
+                root + 7,
+                root + 12
+        };
+    }
+
+    private static int scaleMidi(int rootMidi, int degree, int octaveOffset) {
+        int safeDegree = Math.max(1, Math.min(7, degree));
+        return rootMidi + MAJOR_SCALE[safeDegree - 1] + octaveOffset * 12;
+    }
+
+    private static int degreeFromLabel(String label) {
+        if (label == null || label.isEmpty()) {
+            return 1;
+        }
+        for (int i = 0; i < label.length(); i++) {
+            char c = label.charAt(i);
+            if (c >= '1' && c <= '7') {
+                return c - '0';
+            }
+        }
+        return 1;
+    }
+
+    private static double chordPad(int[] chord, double time) {
+        double sum = 0.0;
+        for (int i = 0; i < chord.length; i++) {
+            double phase = time + i * 0.011;
+            sum += Math.sin(TWO_PI * MusicTheory.frequencyForMidi(chord[i]) * phase) * (i == 0 ? 0.35 : 0.22);
+        }
+        return sum;
+    }
+
+    private static double arpeggio(int[] chord, double time, double beat) {
+        double step = beat * 2.0;
+        int index = Math.floorMod((int) Math.floor(step), chord.length);
+        double localStep = step - Math.floor(step);
+        double envelope = Math.exp(-localStep * 3.0) * Math.sin(Math.PI * Math.min(1.0, localStep * 5.0));
+        return Math.sin(TWO_PI * MusicTheory.frequencyForMidi(chord[index]) * time) * envelope;
+    }
+
+    private static double bassPulse(int midi, double time, double beat) {
+        double phase = beat % 2.0;
+        if (phase > 0.45) {
+            return 0.0;
+        }
+        double envelope = Math.exp(-phase * 2.8) * Math.sin(Math.PI * Math.min(1.0, phase / 0.12));
+        return Math.sin(TWO_PI * MusicTheory.frequencyForMidi(midi) * time) * envelope;
     }
 
     private static double pluckEnvelope(double localSeconds, double noteSeconds) {

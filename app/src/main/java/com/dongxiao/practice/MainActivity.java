@@ -389,7 +389,7 @@ public final class MainActivity extends Activity {
         ));
 
         TextView description = new TextView(this);
-        description.setText("播放合成伴奏，同时按节拍高亮动态简谱，适合跟伴奏练完整乐句。");
+        description.setText("播放智能伴奏，同时按节拍高亮动态谱面，适合跟伴奏练完整乐句。");
         description.setTextColor(getColorCompat(R.color.muted));
         description.setTextSize(13.0f);
         description.setLineSpacing(dp(2), 1.0f);
@@ -551,9 +551,9 @@ public final class MainActivity extends Activity {
         songTitleText.setText(song.title);
         songMetaText.setText(song.metaText());
         if (song.title.startsWith("图片转谱 · ")) {
-            songStatusText.setText("该曲由本地图片谱 OCR 转换，播放时会在原图片谱上动态高亮；建议对照原图校正细节。");
+            songStatusText.setText("该曲使用谱面驱动的智能背景伴奏，播放时会在原图片谱上动态高亮；建议对照原图校正细节。");
         } else {
-            songStatusText.setText("伴奏会按谱面节奏播放，当前音符会同步高亮。");
+            songStatusText.setText("智能伴奏会按谱面节奏播放，当前音符会同步高亮。");
         }
         dynamicScoreView.setSong(song);
         configureImageDynamicScore(song);
@@ -667,7 +667,7 @@ public final class MainActivity extends Activity {
         }
         dynamicScoreView.setProgress(0.0, -1);
         songPlayButton.setText("停止伴奏");
-        songStatusText.setText("伴奏播放中，请跟随高亮音符练习。");
+        songStatusText.setText("智能伴奏播放中，请跟随高亮音符练习。");
         songPlayer.start(song);
     }
 
