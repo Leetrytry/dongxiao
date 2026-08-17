@@ -135,7 +135,7 @@ public final class SongPlayer {
         double localSeconds = Math.max(0.0, (beat - noteStartBeat) * secondsPerBeat);
         double noteSeconds = Math.max(0.08, note.beats * secondsPerBeat);
 
-        double melody = Math.sin(TWO_PI * MusicTheory.frequencyForMidi(note.midi) * time)
+        double melody = note.rest ? 0.0 : Math.sin(TWO_PI * MusicTheory.frequencyForMidi(note.midi) * time)
                 * pluckEnvelope(localSeconds, noteSeconds) * 0.16;
         double root = Math.sin(TWO_PI * MusicTheory.frequencyForMidi(song.rootMidi - 12) * time) * 0.08;
         double fifth = Math.sin(TWO_PI * MusicTheory.frequencyForMidi(song.rootMidi - 5) * time) * 0.05;

@@ -12,6 +12,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -27,6 +28,7 @@ import com.dongxiao.practice.practice.PracticeMode;
 import com.dongxiao.practice.practice.PracticeScore;
 import com.dongxiao.practice.practice.PracticeSessionScorer;
 import com.dongxiao.practice.practice.PracticeStats;
+import com.dongxiao.practice.song.AbcSongImporter;
 import com.dongxiao.practice.song.PracticeSong;
 import com.dongxiao.practice.song.SongPlayer;
 import com.dongxiao.practice.song.SongRepository;
@@ -34,6 +36,13 @@ import com.dongxiao.practice.ui.DynamicScoreView;
 import com.dongxiao.practice.ui.TunerView;
 import com.dongxiao.practice.ui.WaveformView;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -61,11 +70,13 @@ public final class MainActivity extends Activity {
     private Spinner fingeringSpinner;
     private Spinner targetSpinner;
     private Spinner songSpinner;
+    private EditText songUrlEditText;
     private CheckBox autoTargetCheck;
     private Button backButton;
     private Button startButton;
     private Button songBackButton;
     private Button songPlayButton;
+    private Button songImportButton;
     private TunerView tunerView;
     private WaveformView waveformView;
     private DynamicScoreView dynamicScoreView;
@@ -73,11 +84,13 @@ public final class MainActivity extends Activity {
     private final PracticeAnalyzer practiceAnalyzer = new PracticeAnalyzer();
     private final PracticeSessionScorer sessionScorer = new PracticeSessionScorer();
     private final List<TargetNote> targets = new ArrayList<>();
-    private final List<PracticeSong> songs = SongRepository.defaults();
+    private final List<PracticeSong> songs = new ArrayList<>(SongRepository.defaults());
     private AudioAnalyzer audioAnalyzer;
     private SongPlayer songPlayer;
+    private ArrayAdapter<PracticeSong> songAdapter;
     private PracticeMode currentPracticeMode;
     private boolean sessionHasFrames = false;
+    private boolean importingSong = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,11 +147,13 @@ public final class MainActivity extends Activity {
         fingeringSpinner = findViewById(R.id.fingeringSpinner);
         targetSpinner = findViewById(R.id.targetSpinner);
         songSpinner = findViewById(R.id.songSpinner);
+        songUrlEditText = findViewById(R.id.songUrlEditText);
         autoTargetCheck = findViewById(R.id.autoTargetCheck);
         backButton = findViewById(R.id.backButton);
         startButton = findViewById(R.id.startButton);
         songBackButton = findViewById(R.id.songBackButton);
         songPlayButton = findViewById(R.id.songPlayButton);
+        songImportButton = findViewById(R.id.songImportButton);
         tunerView = findViewById(R.id.tunerView);
         waveformView = findViewById(R.id.waveformView);
         dynamicScoreView = findViewById(R.id.dynamicScoreView);
@@ -391,7 +406,7 @@ public final class MainActivity extends Activity {
             }
         });
 
-        ArrayAdapter<PracticeSong> songAdapter = createAdapter(songs);
+        songAdapter = createAdapter(songs);
         songSpinner.setAdapter(songAdapter);
         songSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -406,6 +421,7 @@ public final class MainActivity extends Activity {
         });
         songBackButton.setOnClickListener(view -> showHome());
         songPlayButton.setOnClickListener(view -> toggleSongPlayback());
+        songImportButton.setOnClickListener(view -> importSongFromUrl());
         updateSelectedSong();
     }
 
@@ -480,6 +496,85 @@ public final class MainActivity extends Activity {
         songPlayButton.setText("停止伴奏");
         songStatusText.setText("伴奏播放中，请跟随高亮音符练习。");
         songPlayer.start(song);
+    }
+
+    private void importSongFromUrl() {
+        if (importingSong) {
+            return;
+        }
+        String urlText = songUrlEditText.getText().toString().trim();
+        if (urlText.isEmpty()) {
+            songStatusText.setText("请输入可直接下载 ABC 文本的 HTTPS 链接。");
+            return;
+        }
+        if (!urlText.startsWith("https://")) {
+            songStatusText.setText("请使用 HTTPS 曲谱链接。");
+            return;
+        }
+
+        importingSong = true;
+        songImportButton.setEnabled(false);
+        songStatusText.setText("正在导入 ABC 曲谱...");
+        stopSongPlayback(false);
+
+        new Thread(() -> {
+            try {
+                String abcText = downloadText(urlText);
+                PracticeSong importedSong = AbcSongImporter.parse(abcText);
+                runOnUiThread(() -> finishSongImport(importedSong));
+            } catch (IOException | IllegalArgumentException error) {
+                runOnUiThread(() -> failSongImport(error.getMessage()));
+            }
+        }, "dongxiao-song-import").start();
+    }
+
+    private void finishSongImport(PracticeSong importedSong) {
+        importingSong = false;
+        songImportButton.setEnabled(true);
+        songs.add(importedSong);
+        songAdapter.notifyDataSetChanged();
+        songSpinner.setSelection(songs.size() - 1);
+        dynamicScoreView.setSong(importedSong);
+        songStatusText.setText("已导入：" + importedSong.title);
+    }
+
+    private void failSongImport(String message) {
+        importingSong = false;
+        songImportButton.setEnabled(true);
+        songStatusText.setText("导入失败：" + (message == null ? "无法读取曲谱。" : message));
+    }
+
+    private String downloadText(String urlText) throws IOException {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(urlText);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(8000);
+            connection.setReadTimeout(10000);
+            connection.setRequestProperty("User-Agent", "DongxiaoPractice/0.4");
+            int responseCode = connection.getResponseCode();
+            if (responseCode < 200 || responseCode >= 300) {
+                throw new IOException("HTTP " + responseCode);
+            }
+            try (InputStream inputStream = connection.getInputStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                StringBuilder builder = new StringBuilder();
+                char[] buffer = new char[4096];
+                int read;
+                int limit = 256 * 1024;
+                while ((read = reader.read(buffer)) != -1) {
+                    builder.append(buffer, 0, read);
+                    if (builder.length() > limit) {
+                        throw new IOException("曲谱文件过大。");
+                    }
+                }
+                return builder.toString();
+            }
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
     }
 
     private void stopSongPlayback(boolean resetProgress) {
