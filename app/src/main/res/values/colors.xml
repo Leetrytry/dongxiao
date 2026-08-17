@@ -10,6 +10,13 @@
     <color name="accent">#1D7A6B</color>
     <color name="accent_dark">#123C35</color>
     <color name="accent_soft">#DCECDF</color>
+    <color name="bamboo">#2F6F50</color>
+    <color name="paper">#FFFDF6</color>
+    <color name="paper_deep">#F6E9CF</color>
+    <color name="gold">#C49A45</color>
+    <color name="gold_dark">#8A6630</color>
+    <color name="cinnabar">#A7372F</color>
+    <color name="cinnabar_dark">#7C241F</color>
     <color name="warning">#B45F06</color>
     <color name="danger">#B3261E</color>
 </resources>

@@ -212,12 +212,34 @@ public final class MainActivity extends Activity {
             card.setElevation(dp(1));
         }
 
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+
         TextView title = new TextView(this);
         title.setText(mode.label);
         title.setTextColor(getColorCompat(R.color.ink));
         title.setTextSize(18.0f);
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        card.addView(title, new LinearLayout.LayoutParams(
+
+        TextView seal = new TextView(this);
+        seal.setText("练");
+        seal.setGravity(Gravity.CENTER);
+        seal.setTextColor(getColorCompat(R.color.paper));
+        seal.setTextSize(13.0f);
+        seal.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        seal.setBackgroundResource(R.drawable.bg_seal);
+
+        titleRow.addView(title, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1.0f
+        ));
+        titleRow.addView(seal, new LinearLayout.LayoutParams(
+                dp(28),
+                dp(28)
+        ));
+        card.addView(titleRow, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         ));

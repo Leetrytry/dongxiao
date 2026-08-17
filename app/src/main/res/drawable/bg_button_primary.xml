@@ -2,13 +2,22 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_pressed="true">
         <shape>
-            <solid android:color="#155A50" />
+            <solid android:color="@color/accent_dark" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/gold" />
             <corners android:radius="14dp" />
         </shape>
     </item>
     <item>
         <shape>
-            <solid android:color="@color/accent" />
+            <gradient
+                android:angle="0"
+                android:endColor="@color/accent"
+                android:startColor="@color/bamboo" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/gold" />
             <corners android:radius="14dp" />
         </shape>
     </item>
