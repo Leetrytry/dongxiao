@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="tube6" x1="217" y1="0" x2="295" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5b3616"/>
+      <stop offset=".22" stop-color="#a36d2d"/>
+      <stop offset=".5" stop-color="#f0c976"/>
+      <stop offset=".76" stop-color="#9b6427"/>
+      <stop offset="1" stop-color="#3a210d"/>
+    </linearGradient>
+    <filter id="shadow6" x="-50%" y="-15%" width="200%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#2b2115" flood-opacity=".24"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#f8f1e5"/>
+  <path d="M214 42h84v432h-84z" fill="#e9dcc6" opacity=".45"/>
+  <g filter="url(#shadow6)">
+    <rect x="216" y="42" width="80" height="432" rx="40" fill="url(#tube6)"/>
+    <path d="M232 46c3 27 45 27 48 0c-12-7-36-7-48 0z" fill="#150a04"/>
+    <path d="M240 52c6 14 12 21 16 25c4-4 10-11 16-25" fill="none" stroke="#efc66e" stroke-width="5" stroke-linecap="round"/>
+    <path d="M216 96c19 8 61 8 80 0M216 144c19 8 61 8 80 0M216 192c19 8 61 8 80 0M216 240c19 8 61 8 80 0M216 288c19 8 61 8 80 0M216 336c19 8 61 8 80 0M216 384c19 8 61 8 80 0M216 432c19 8 61 8 80 0" fill="none" stroke="#533016" stroke-width="6" stroke-linecap="round" opacity=".75"/>
+    <g fill="#120703">
+      <circle cx="256" cy="177" r="13"/>
+      <circle cx="256" cy="226" r="13"/>
+      <circle cx="256" cy="275" r="13"/>
+      <circle cx="256" cy="324" r="13"/>
+      <circle cx="256" cy="373" r="13"/>
+      <circle cx="238" cy="430" r="7"/>
+      <circle cx="274" cy="430" r="7"/>
+    </g>
+    <path d="M256 460v38M240 470l-22 27M272 470l22 27" stroke="#a52a22" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="256" cy="460" r="9" fill="#b53026"/>
+  </g>
+  <path d="M316 177h64M316 226h64M316 275h64M316 324h64M316 373h64" stroke="#84643a" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+  <text x="390" y="282" font-size="20" fill="#5d4729" font-family="serif">正面五孔</text>
+  <path d="M309 430h64" stroke="#84643a" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+  <text x="383" y="436" font-size="19" fill="#5d4729" font-family="serif">凤眼/飘穗孔</text>
+  <path d="M204 58h-56" stroke="#84643a" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+  <text x="62" y="65" font-size="19" fill="#5d4729" font-family="serif">顶部吹口</text>
+</svg>

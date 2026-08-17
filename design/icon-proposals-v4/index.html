@@ -1,0 +1,137 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>洞箫练习 App 图标候选 V4</title>
+<style>
+  :root {
+    color: #211f1a;
+    background: #f0e8dc;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  body {
+    margin: 0;
+    padding: 32px;
+  }
+  header {
+    max-width: 1100px;
+    margin-bottom: 26px;
+  }
+  h1 {
+    margin: 0 0 10px;
+    font-size: 26px;
+  }
+  p {
+    margin: 0 0 10px;
+    color: #665d50;
+    line-height: 1.6;
+  }
+  ul {
+    margin: 12px 0 14px;
+    padding-left: 20px;
+    color: #5b5143;
+    line-height: 1.7;
+  }
+  .refs {
+    font-size: 13px;
+  }
+  .refs a {
+    color: #765222;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 24px;
+  }
+  .item {
+    background: #fffaf1;
+    border: 1px solid #ddceb8;
+    border-radius: 16px;
+    padding: 20px;
+  }
+  .preview {
+    display: grid;
+    place-items: center;
+    height: 260px;
+    background:
+      linear-gradient(45deg, #eadfce 25%, transparent 25%),
+      linear-gradient(-45deg, #eadfce 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #eadfce 75%),
+      linear-gradient(-45deg, transparent 75%, #eadfce 75%);
+    background-size: 26px 26px;
+    background-position: 0 0, 0 13px, 13px -13px, -13px 0;
+    border-radius: 12px;
+  }
+  img {
+    width: 196px;
+    height: 196px;
+    filter: drop-shadow(0 16px 20px rgba(32, 28, 20, .2));
+  }
+  h2 {
+    margin: 16px 0 7px;
+    font-size: 17px;
+  }
+  .desc {
+    font-size: 13px;
+  }
+  code {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #72552f;
+  }
+</style>
+<header>
+  <h1>洞箫练习 App 图标候选 V4</h1>
+  <p>这一版先修正形制错误，再考虑图标美术。绘制约束已保存到 <a href="../icon-references/dongxiao-structure-notes.md">dongxiao-structure-notes.md</a>。</p>
+  <ul>
+    <li>管身改为等宽直筒，不再画成明显上细下粗或上粗下细。</li>
+    <li>正面只画 5 个按音孔；背面拇指孔不画到正面。</li>
+    <li>下端只画成对的小出音/凤眼/飘穗孔，并与按音孔区分。</li>
+    <li>顶部画端吹 U/V 缺口，不再按横笛或普通管子处理。</li>
+    <li>竹节只作为横向节环，不改变管身外径。</li>
+  </ul>
+  <p class="refs">参考依据：
+    <a href="https://sjz.jiaoyubao.cn/edu/sjzyfzy/0_1161581.html">前五后一、下端出音孔/助音孔</a> /
+    <a href="https://www.tianlong.art/Article/392.html">南音洞箫 V 口、前5后1、尾端2饰孔</a> /
+    <a href="https://omeka-s.grinnell.edu/s/MusicalInstruments/item/1251">Grinnell dongxiao: five fingerholes, thumbhole, vent holes</a> /
+    <a href="https://music.yale.edu/browse-collection/dong-xiao-31011973">Yale Dong xiao: 5 + 1 holes, tassel holes</a> /
+    <a href="https://ohio5.contentdm.oclc.org/digital/collection/knight/id/1731/">Oberlin xiao: U notch, five front holes, two tuning holes</a>
+  </p>
+</header>
+<main class="grid">
+  <section class="item">
+    <div class="preview"><img src="01_accurate_front_yellow_bamboo.svg" alt="等径黄竹正面洞箫"></div>
+    <h2>01 等径黄竹正面</h2>
+    <p class="desc">标准结构款：等宽直筒、U 口、正面五孔、下端一对凤眼孔。</p>
+    <code>01_accurate_front_yellow_bamboo.svg</code>
+  </section>
+  <section class="item">
+    <div class="preview"><img src="02_accurate_front_purple_bamboo.svg" alt="等径紫竹正面洞箫"></div>
+    <h2>02 等径紫竹正面</h2>
+    <p class="desc">更接近常见紫竹箫的颜色，同样严格保留正面五孔和等径管身。</p>
+    <code>02_accurate_front_purple_bamboo.svg</code>
+  </section>
+  <section class="item">
+    <div class="preview"><img src="03_accurate_nanyin_v_mouth.svg" alt="南音 V 口洞箫"></div>
+    <h2>03 南音 V 口</h2>
+    <p class="desc">以 V 型吹口、九节感和下端凤眼表达南音洞箫，但不夸张变径。</p>
+    <code>03_accurate_nanyin_v_mouth.svg</code>
+  </section>
+  <section class="item">
+    <div class="preview"><img src="04_accurate_clean_line.svg" alt="结构正确线描洞箫"></div>
+    <h2>04 结构线描</h2>
+    <p class="desc">最清楚地呈现结构，不靠材质掩盖孔位。适合继续做品牌化简化。</p>
+    <code>04_accurate_clean_line.svg</code>
+  </section>
+  <section class="item">
+    <div class="preview"><img src="05_accurate_mouthpiece_crop.svg" alt="吹口特写洞箫"></div>
+    <h2>05 吹口特写</h2>
+    <p class="desc">放大顶部端吹缺口，只截取上半段，适合强调洞箫区别于横笛的特征。</p>
+    <code>05_accurate_mouthpiece_crop.svg</code>
+  </section>
+  <section class="item">
+    <div class="preview"><img src="06_accurate_labeled_reference.svg" alt="带标注结构参考洞箫"></div>
+    <h2>06 带标注参考</h2>
+    <p class="desc">用于校验孔位和形制，不建议直接作为 App 图标。</p>
+    <code>06_accurate_labeled_reference.svg</code>
+  </section>
+</main>

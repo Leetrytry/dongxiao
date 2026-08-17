@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ece0cc"/>
+      <stop offset=".55" stop-color="#d1b584"/>
+      <stop offset="1" stop-color="#8f6e3d"/>
+    </linearGradient>
+    <linearGradient id="tube2" x1="216" y1="0" x2="296" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#080404"/>
+      <stop offset=".12" stop-color="#221313"/>
+      <stop offset=".28" stop-color="#4a2524"/>
+      <stop offset=".48" stop-color="#855041"/>
+      <stop offset=".62" stop-color="#b57952"/>
+      <stop offset=".78" stop-color="#5b312b"/>
+      <stop offset=".92" stop-color="#1e0f0f"/>
+      <stop offset="1" stop-color="#060303"/>
+    </linearGradient>
+    <linearGradient id="node2" x1="216" y1="0" x2="296" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#110808"/>
+      <stop offset=".5" stop-color="#c99664"/>
+      <stop offset="1" stop-color="#100707"/>
+    </linearGradient>
+    <radialGradient id="hole2" cx="36%" cy="29%" r="70%">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset=".7" stop-color="#100606"/>
+      <stop offset="1" stop-color="#7e4a35"/>
+    </radialGradient>
+    <filter id="shadow2" x="-50%" y="-15%" width="200%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="14" flood-color="#160c0b" flood-opacity=".34"/>
+    </filter>
+    <clipPath id="tubeClip2">
+      <rect x="214" y="42" width="84" height="432" rx="42"/>
+    </clipPath>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg2)"/>
+  <path d="M0 0h512v138c-72 16-125 38-180 62c-87 38-174 39-332 6z" fill="#2b4138"/>
+  <path d="M78 104c45-19 86-17 127 6" fill="none" stroke="#dfc79f" stroke-width="12" stroke-linecap="round" opacity=".35"/>
+  <g filter="url(#shadow2)">
+    <rect x="214" y="42" width="84" height="432" rx="42" fill="url(#tube2)"/>
+    <g clip-path="url(#tubeClip2)">
+      <path d="M228 56c-6 101-6 205 0 318c2 39 0 67-5 88" stroke="#080404" stroke-width="6" stroke-linecap="round" opacity=".5" fill="none"/>
+      <path d="M250 52c8 107 8 218 2 334c-2 35 1 60 7 77" stroke="#d8a276" stroke-width="7" stroke-linecap="round" opacity=".16" fill="none"/>
+      <path d="M286 56c-5 107-4 218 5 333c2 33 0 57-4 73" stroke="#060303" stroke-width="6" stroke-linecap="round" opacity=".44" fill="none"/>
+      <path d="M214 96c20 9 64 9 84 0M214 144c20 9 64 9 84 0M214 192c20 8 64 8 84 0M214 240c20 8 64 8 84 0M214 288c20 8 64 8 84 0M214 336c20 8 64 8 84 0M214 384c20 8 64 8 84 0M214 432c20 8 64 8 84 0" fill="none" stroke="url(#node2)" stroke-width="8" stroke-linecap="round" opacity=".78"/>
+      <path d="M214 107c20 4 64 4 84 0M214 203c20 4 64 4 84 0M214 299c20 4 64 4 84 0M214 395c20 4 64 4 84 0" fill="none" stroke="#080404" stroke-width="3" stroke-linecap="round" opacity=".42"/>
+    </g>
+    <path d="M214 70c18 12 66 12 84 0" fill="none" stroke="#060303" stroke-width="7" stroke-linecap="round"/>
+    <path d="M232 46c3 27 45 27 48 0c-12-8-36-8-48 0z" fill="#050202"/>
+    <path d="M239 51c6 15 12 22 17 26c5-4 11-11 17-26" fill="none" stroke="#c98f5f" stroke-width="5" stroke-linecap="round"/>
+    <g>
+      <ellipse cx="256" cy="177" rx="14" ry="16" fill="#a36b4b"/>
+      <ellipse cx="256" cy="177" rx="11" ry="13" fill="url(#hole2)"/>
+      <ellipse cx="256" cy="226" rx="14" ry="16" fill="#a36b4b"/>
+      <ellipse cx="256" cy="226" rx="11" ry="13" fill="url(#hole2)"/>
+      <ellipse cx="256" cy="275" rx="14" ry="16" fill="#a36b4b"/>
+      <ellipse cx="256" cy="275" rx="11" ry="13" fill="url(#hole2)"/>
+      <ellipse cx="256" cy="324" rx="14" ry="16" fill="#a36b4b"/>
+      <ellipse cx="256" cy="324" rx="11" ry="13" fill="url(#hole2)"/>
+      <ellipse cx="256" cy="373" rx="14" ry="16" fill="#a36b4b"/>
+      <ellipse cx="256" cy="373" rx="11" ry="13" fill="url(#hole2)"/>
+    </g>
+    <ellipse cx="238" cy="430" rx="7" ry="9" fill="#080404"/>
+    <ellipse cx="274" cy="430" rx="7" ry="9" fill="#080404"/>
+    <path d="M256 460v38M240 470l-22 27M272 470l22 27" stroke="#2b4138" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="256" cy="460" r="9" fill="#c99664"/>
+  </g>
+</svg>

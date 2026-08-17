@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="closeBg" cx="34%" cy="22%" r="80%">
+      <stop offset="0" stop-color="#fff9ea"/>
+      <stop offset=".6" stop-color="#e9d6b4"/>
+      <stop offset="1" stop-color="#b99057"/>
+    </radialGradient>
+    <linearGradient id="closeTube" x1="166" y1="0" x2="351" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#42250e"/>
+      <stop offset=".1" stop-color="#70481a"/>
+      <stop offset=".28" stop-color="#b98032"/>
+      <stop offset=".48" stop-color="#f0cb72"/>
+      <stop offset=".6" stop-color="#ffe3a1"/>
+      <stop offset=".75" stop-color="#c78c3c"/>
+      <stop offset=".9" stop-color="#6d4319"/>
+      <stop offset="1" stop-color="#301906"/>
+    </linearGradient>
+    <linearGradient id="innerWall" x1="205" y1="0" x2="307" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0a0502"/>
+      <stop offset=".38" stop-color="#563016"/>
+      <stop offset=".55" stop-color="#d99d4a"/>
+      <stop offset="1" stop-color="#090402"/>
+    </linearGradient>
+    <radialGradient id="closeHole" cx="35%" cy="28%" r="75%">
+      <stop offset="0" stop-color="#020101"/>
+      <stop offset=".74" stop-color="#130803"/>
+      <stop offset="1" stop-color="#9d6124"/>
+    </radialGradient>
+    <filter id="closeDrop" x="-45%" y="-25%" width="190%" height="160%">
+      <feDropShadow dx="0" dy="22" stdDeviation="18" flood-color="#321c0b" flood-opacity=".3"/>
+    </filter>
+    <filter id="closeGrain" x="-20%" y="-10%" width="140%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" seed="66" result="noise"/>
+      <feColorMatrix in="noise" type="matrix"
+        values="0 0 0 0 0.46 0 0 0 0 0.30 0 0 0 0 0.12 0 0 0 .20 0"/>
+      <feBlend in2="SourceGraphic" mode="multiply"/>
+    </filter>
+    <clipPath id="closeClip">
+      <path d="M185 107c2-45 32-72 71-72s69 27 71 72l25 310c3 38-36 65-96 65s-99-27-96-65z"/>
+    </clipPath>
+  </defs>
+  <rect width="512" height="512" rx="94" fill="url(#closeBg)"/>
+  <path d="M60 417c68-34 128-41 193-16c72 28 133 20 199-28" fill="none" stroke="#c39b5f" stroke-width="40" stroke-linecap="round" opacity=".28"/>
+  <g filter="url(#closeDrop)">
+    <path d="M185 107c2-45 32-72 71-72s69 27 71 72l25 310c3 38-36 65-96 65s-99-27-96-65z" fill="url(#closeTube)"/>
+    <g clip-path="url(#closeClip)" filter="url(#closeGrain)">
+      <path d="M176 172c30 24 130 24 160 0M181 231c28 20 121 20 149 0M187 290c26 17 111 17 137 0M193 349c24 15 99 15 123 0M199 408c22 13 87 13 109 0" fill="none" stroke="#6d3f14" stroke-width="7" stroke-linecap="round" opacity=".5"/>
+      <path d="M174 155c31 16 133 16 164 0M180 214c29 14 123 14 152 0M186 273c27 13 113 13 140 0M192 332c25 11 101 11 126 0M198 391c23 10 89 10 112 0" fill="none" stroke="#f7d784" stroke-width="9" stroke-linecap="round" opacity=".42"/>
+      <path d="M211 62c-15 126-11 258 9 402" stroke="#4c2a0d" stroke-width="10" stroke-linecap="round" opacity=".25" fill="none"/>
+      <path d="M251 50c13 123 13 258 1 414" stroke="#fff0ad" stroke-width="11" stroke-linecap="round" opacity=".16" fill="none"/>
+      <path d="M311 63c-6 116-1 249 16 390" stroke="#2b1606" stroke-width="10" stroke-linecap="round" opacity=".25" fill="none"/>
+    </g>
+    <path d="M205 84c22-31 80-31 102 0c-4 29-21 54-51 69c-30-15-47-40-51-69z" fill="url(#innerWall)"/>
+    <path d="M226 73c19-14 41-14 60 0c-5 32-15 52-30 66c-15-14-25-34-30-66z" fill="#120904"/>
+    <path d="M237 78c8 25 14 39 19 47c5-8 11-22 19-47" fill="none" stroke="#e8b35e" stroke-width="7" stroke-linecap="round"/>
+    <path d="M205 84c25 18 77 18 102 0" fill="none" stroke="#271305" stroke-width="8" stroke-linecap="round" opacity=".65"/>
+    <path d="M206 105c26 18 74 18 100 0" fill="none" stroke="#f1ca73" stroke-width="5" stroke-linecap="round" opacity=".5"/>
+    <ellipse cx="256" cy="205" rx="16" ry="19" fill="#9b5c20"/>
+    <ellipse cx="256" cy="205" rx="12" ry="15" fill="url(#closeHole)"/>
+    <ellipse cx="256" cy="260" rx="16" ry="19" fill="#9b5c20"/>
+    <ellipse cx="256" cy="260" rx="12" ry="15" fill="url(#closeHole)"/>
+    <ellipse cx="256" cy="315" rx="16" ry="19" fill="#9b5c20"/>
+    <ellipse cx="256" cy="315" rx="12" ry="15" fill="url(#closeHole)"/>
+    <ellipse cx="256" cy="370" rx="16" ry="19" fill="#9b5c20"/>
+    <ellipse cx="256" cy="370" rx="12" ry="15" fill="url(#closeHole)"/>
+    <ellipse cx="215" cy="260" rx="9" ry="11" fill="#150803" opacity=".76"/>
+    <ellipse cx="239" cy="431" rx="10" ry="12" fill="#150803"/>
+    <ellipse cx="273" cy="431" rx="10" ry="12" fill="#150803"/>
+  </g>
+</svg>

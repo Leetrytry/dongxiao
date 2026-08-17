@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="meterBg" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#071923"/>
+      <stop offset=".62" stop-color="#12323b"/>
+      <stop offset="1" stop-color="#08151b"/>
+    </linearGradient>
+    <linearGradient id="meterTube" x1="205" y1="0" x2="307" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#43250f"/>
+      <stop offset=".18" stop-color="#81551f"/>
+      <stop offset=".45" stop-color="#d1a34e"/>
+      <stop offset=".57" stop-color="#f6db8e"/>
+      <stop offset=".72" stop-color="#bd8434"/>
+      <stop offset="1" stop-color="#3b210d"/>
+    </linearGradient>
+    <linearGradient id="meterNode" x1="214" y1="0" x2="300" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2a1507"/>
+      <stop offset=".52" stop-color="#f5d98b"/>
+      <stop offset="1" stop-color="#261306"/>
+    </linearGradient>
+    <radialGradient id="meterHole" cx="37%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#040201"/>
+      <stop offset=".7" stop-color="#140803"/>
+      <stop offset="1" stop-color="#8c581f"/>
+    </radialGradient>
+    <filter id="meterDrop" x="-45%" y="-20%" width="190%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="14" flood-color="#02080a" flood-opacity=".45"/>
+    </filter>
+    <clipPath id="meterClip">
+      <path d="M219 70c1-16 15-26 37-26s36 10 37 26c3 81 8 212 14 334c2 28-18 47-51 47s-53-19-51-47c6-122 11-253 14-334z"/>
+    </clipPath>
+  </defs>
+  <rect width="512" height="512" rx="94" fill="url(#meterBg)"/>
+  <path d="M72 360a184 184 0 0 1 368 0" fill="none" stroke="#2b535f" stroke-width="30" stroke-linecap="round"/>
+  <path d="M72 360a184 184 0 0 1 78-150" fill="none" stroke="#d15346" stroke-width="30" stroke-linecap="round"/>
+  <path d="M362 210a184 184 0 0 1 78 150" fill="none" stroke="#3bb18e" stroke-width="30" stroke-linecap="round"/>
+  <path d="M256 99v45M155 151l32 32M357 151l-32 32M109 280h42M361 280h42" stroke="#d8efea" stroke-width="12" stroke-linecap="round" opacity=".92"/>
+  <path d="M256 362l93-67" stroke="#eefaf7" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="256" cy="362" r="19" fill="#eefaf7"/>
+  <circle cx="256" cy="362" r="8" fill="#12323b"/>
+  <g filter="url(#meterDrop)">
+    <path d="M219 70c1-16 15-26 37-26s36 10 37 26c3 81 8 212 14 334c2 28-18 47-51 47s-53-19-51-47c6-122 11-253 14-334z" fill="url(#meterTube)"/>
+    <g clip-path="url(#meterClip)">
+      <path d="M226 117c19 12 60 12 79 0M228 163c18 11 56 11 74 0M230 209c17 10 52 10 69 0M232 255c16 9 48 9 64 0M234 301c15 8 44 8 59 0M236 347c14 8 40 8 54 0M238 393c13 7 36 7 49 0" fill="none" stroke="url(#meterNode)" stroke-width="8" stroke-linecap="round" opacity=".78"/>
+      <path d="M243 57c8 94 9 205 3 333c-1 30 1 48 7 57" stroke="#fff0ad" stroke-width="8" stroke-linecap="round" opacity=".18" fill="none"/>
+      <path d="M282 58c-5 100-3 207 5 333c2 29 1 48-4 57" stroke="#2d1606" stroke-width="7" stroke-linecap="round" opacity=".3" fill="none"/>
+    </g>
+    <path d="M236 53c3 28 37 28 40 0c-10-7-30-7-40 0z" fill="#160b05"/>
+    <path d="M241 58c5 14 11 21 15 24c4-3 10-10 15-24" fill="none" stroke="#eac06a" stroke-width="5" stroke-linecap="round"/>
+    <g>
+      <ellipse cx="256" cy="179" rx="14" ry="16" fill="#a66a28"/>
+      <ellipse cx="256" cy="179" rx="11" ry="13" fill="url(#meterHole)"/>
+      <ellipse cx="256" cy="224" rx="14" ry="16" fill="#a66a28"/>
+      <ellipse cx="256" cy="224" rx="11" ry="13" fill="url(#meterHole)"/>
+      <ellipse cx="256" cy="269" rx="14" ry="16" fill="#a66a28"/>
+      <ellipse cx="256" cy="269" rx="11" ry="13" fill="url(#meterHole)"/>
+      <ellipse cx="256" cy="314" rx="14" ry="16" fill="#a66a28"/>
+      <ellipse cx="256" cy="314" rx="11" ry="13" fill="url(#meterHole)"/>
+      <ellipse cx="256" cy="359" rx="14" ry="16" fill="#a66a28"/>
+      <ellipse cx="256" cy="359" rx="11" ry="13" fill="url(#meterHole)"/>
+    </g>
+    <ellipse cx="228" cy="224" rx="8" ry="10" fill="#140803" opacity=".75"/>
+    <ellipse cx="242" cy="410" rx="8" ry="10" fill="#140803"/>
+    <ellipse cx="270" cy="410" rx="8" ry="10" fill="#140803"/>
+    <path d="M256 446v54M240 456l-22 38M272 456l22 38" stroke="#d15346" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="256" cy="446" r="10" fill="#d15346"/>
+  </g>
+  <path d="M167 438h178" stroke="#d8efea" stroke-width="18" stroke-linecap="round" opacity=".9"/>
+</svg>

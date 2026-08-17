@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="yellowBamboo" x1="214" y1="0" x2="298" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#81572a"/>
+      <stop offset=".22" stop-color="#c79442"/>
+      <stop offset=".5" stop-color="#ffe0a0"/>
+      <stop offset=".82" stop-color="#c18636"/>
+      <stop offset="1" stop-color="#6e4520"/>
+    </linearGradient>
+    <filter id="softShadow" x="-50%" y="-20%" width="200%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="13" flood-color="#402914" flood-opacity=".22"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#f8f0dc"/>
+  <path d="M80 424c64-25 118-22 171-2c70 27 124 16 184-24" fill="none" stroke="#e7d1a6" stroke-width="32" stroke-linecap="round"/>
+  <g filter="url(#softShadow)">
+    <path d="M226 61c0-14 12-23 30-23s30 9 30 23l10 366c1 19-14 34-40 34s-41-15-40-34z" fill="url(#yellowBamboo)"/>
+    <path d="M238 44c2 27 34 27 36 0c-10-5-26-5-36 0z" fill="#39210e"/>
+    <path d="M241 48c5 15 25 15 30 0" stroke="#ffe0a0" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M224 102c17 8 47 8 64 0M225 148c16 8 45 8 61 0M226 194c15 8 43 8 58 0M227 240c15 7 41 7 56 0M228 286c14 7 39 7 53 0M229 332c13 6 37 6 50 0M230 378c12 6 35 6 47 0" fill="none" stroke="#7c5528" stroke-width="6" stroke-linecap="round" opacity=".76"/>
+    <path d="M222 432c17 11 51 11 68 0" fill="none" stroke="#efe4d2" stroke-width="15" stroke-linecap="round"/>
+    <path d="M225 424c16 8 47 8 63 0" fill="none" stroke="#785126" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="256" cy="181" r="13" fill="#2a170a"/>
+    <circle cx="256" cy="226" r="13" fill="#2a170a"/>
+    <circle cx="256" cy="271" r="13" fill="#2a170a"/>
+    <circle cx="256" cy="316" r="13" fill="#2a170a"/>
+    <circle cx="256" cy="361" r="13" fill="#2a170a"/>
+    <circle cx="227" cy="229" r="7" fill="#2a170a" opacity=".62"/>
+    <circle cx="242" cy="407" r="7" fill="#2a170a"/>
+    <circle cx="270" cy="407" r="7" fill="#2a170a"/>
+    <path d="M276 136c-11 15-10 31 2 45M236 139c10 13 11 28 1 42M276 301c-12 16-10 32 2 47M236 304c10 14 11 29 1 43" fill="none" stroke="#6f4720" stroke-width="5" stroke-linecap="round" opacity=".72"/>
+    <path d="M256 438v55M242 449l-18 39M270 449l18 39" stroke="#69401b" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <text x="118" y="123" fill="#996f38" font-size="28" font-family="serif" opacity=".5">箫</text>
+</svg>
