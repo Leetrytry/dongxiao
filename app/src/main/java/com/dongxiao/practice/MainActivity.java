@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
@@ -15,6 +17,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -31,6 +34,8 @@ import com.dongxiao.practice.practice.PracticeScore;
 import com.dongxiao.practice.practice.PracticeSessionScorer;
 import com.dongxiao.practice.practice.PracticeStats;
 import com.dongxiao.practice.song.AbcSongImporter;
+import com.dongxiao.practice.song.ImageScore;
+import com.dongxiao.practice.song.ImageScoreRepository;
 import com.dongxiao.practice.song.LocalSongStore;
 import com.dongxiao.practice.song.OnlineSongCatalog;
 import com.dongxiao.practice.song.OnlineSongResource;
@@ -67,6 +72,7 @@ public final class MainActivity extends Activity {
     private TextView songMetaText;
     private TextView songStatusText;
     private TextView onlineResourceText;
+    private TextView imageScorePageText;
     private LinearLayout homeContainer;
     private LinearLayout practiceContainer;
     private LinearLayout songContainer;
@@ -77,6 +83,7 @@ public final class MainActivity extends Activity {
     private Spinner targetSpinner;
     private Spinner songSpinner;
     private Spinner onlineResourceSpinner;
+    private Spinner imageScoreSpinner;
     private EditText songUrlEditText;
     private CheckBox autoTargetCheck;
     private Button backButton;
@@ -86,6 +93,9 @@ public final class MainActivity extends Activity {
     private Button songImportButton;
     private Button resourceImportButton;
     private Button resourceOpenButton;
+    private Button imageScorePrevButton;
+    private Button imageScoreNextButton;
+    private ImageView imageScoreView;
     private TunerView tunerView;
     private WaveformView waveformView;
     private DynamicScoreView dynamicScoreView;
@@ -96,13 +106,16 @@ public final class MainActivity extends Activity {
     private final List<PracticeSong> songs = new ArrayList<>(SongRepository.defaults());
     private final List<PracticeSong> localSongs = new ArrayList<>();
     private final List<OnlineSongResource> onlineResources = OnlineSongCatalog.defaults();
+    private final List<ImageScore> imageScores = ImageScoreRepository.defaults();
     private AudioAnalyzer audioAnalyzer;
     private SongPlayer songPlayer;
     private ArrayAdapter<PracticeSong> songAdapter;
     private ArrayAdapter<OnlineSongResource> onlineResourceAdapter;
+    private ArrayAdapter<ImageScore> imageScoreAdapter;
     private PracticeMode currentPracticeMode;
     private boolean sessionHasFrames = false;
     private boolean importingSong = false;
+    private int imageScorePageIndex = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -151,6 +164,7 @@ public final class MainActivity extends Activity {
         songMetaText = findViewById(R.id.songMetaText);
         songStatusText = findViewById(R.id.songStatusText);
         onlineResourceText = findViewById(R.id.onlineResourceText);
+        imageScorePageText = findViewById(R.id.imageScorePageText);
         homeContainer = findViewById(R.id.homeContainer);
         practiceContainer = findViewById(R.id.practiceContainer);
         songContainer = findViewById(R.id.songContainer);
@@ -161,6 +175,7 @@ public final class MainActivity extends Activity {
         targetSpinner = findViewById(R.id.targetSpinner);
         songSpinner = findViewById(R.id.songSpinner);
         onlineResourceSpinner = findViewById(R.id.onlineResourceSpinner);
+        imageScoreSpinner = findViewById(R.id.imageScoreSpinner);
         songUrlEditText = findViewById(R.id.songUrlEditText);
         autoTargetCheck = findViewById(R.id.autoTargetCheck);
         backButton = findViewById(R.id.backButton);
@@ -170,6 +185,9 @@ public final class MainActivity extends Activity {
         songImportButton = findViewById(R.id.songImportButton);
         resourceImportButton = findViewById(R.id.resourceImportButton);
         resourceOpenButton = findViewById(R.id.resourceOpenButton);
+        imageScorePrevButton = findViewById(R.id.imageScorePrevButton);
+        imageScoreNextButton = findViewById(R.id.imageScoreNextButton);
+        imageScoreView = findViewById(R.id.imageScoreView);
         tunerView = findViewById(R.id.tunerView);
         waveformView = findViewById(R.id.waveformView);
         dynamicScoreView = findViewById(R.id.dynamicScoreView);
@@ -451,12 +469,28 @@ public final class MainActivity extends Activity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+        imageScoreAdapter = createAdapter(imageScores);
+        imageScoreSpinner.setAdapter(imageScoreAdapter);
+        imageScoreSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                imageScorePageIndex = 0;
+                updateSelectedImageScore();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
         songBackButton.setOnClickListener(view -> showHome());
         songPlayButton.setOnClickListener(view -> toggleSongPlayback());
         songImportButton.setOnClickListener(view -> importSongFromUrl());
         resourceImportButton.setOnClickListener(view -> importSelectedOnlineResource());
         resourceOpenButton.setOnClickListener(view -> openSelectedOnlineResource());
+        imageScorePrevButton.setOnClickListener(view -> moveImageScorePage(-1));
+        imageScoreNextButton.setOnClickListener(view -> moveImageScorePage(1));
         updateSelectedOnlineResource();
+        updateSelectedImageScore();
         updateSelectedSong();
     }
 
@@ -620,6 +654,42 @@ public final class MainActivity extends Activity {
         }
         onlineResourceText.setText(resource.detailText());
         resourceImportButton.setEnabled(resource.importable && !importingSong);
+    }
+
+    private void updateSelectedImageScore() {
+        ImageScore imageScore = selectedImageScore();
+        if (imageScore == null) {
+            imageScoreView.setImageDrawable(null);
+            imageScorePageText.setText("暂无图片谱");
+            imageScorePrevButton.setEnabled(false);
+            imageScoreNextButton.setEnabled(false);
+            return;
+        }
+        imageScorePageIndex = Math.max(0, Math.min(imageScorePageIndex, imageScore.pageCount() - 1));
+        imageScorePageText.setText(String.format(
+                Locale.CHINA,
+                "第 %d / %d 页",
+                imageScorePageIndex + 1,
+                imageScore.pageCount()
+        ));
+        imageScorePrevButton.setEnabled(imageScorePageIndex > 0);
+        imageScoreNextButton.setEnabled(imageScorePageIndex < imageScore.pageCount() - 1);
+        try (InputStream inputStream = getAssets().open(imageScore.assetPath(imageScorePageIndex))) {
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            imageScoreView.setImageBitmap(bitmap);
+        } catch (IOException error) {
+            imageScoreView.setImageDrawable(null);
+            imageScorePageText.setText("图片谱加载失败");
+        }
+    }
+
+    private void moveImageScorePage(int delta) {
+        ImageScore imageScore = selectedImageScore();
+        if (imageScore == null) {
+            return;
+        }
+        imageScorePageIndex = Math.max(0, Math.min(imageScorePageIndex + delta, imageScore.pageCount() - 1));
+        updateSelectedImageScore();
     }
 
     private void setSongImportControlsEnabled(boolean enabled) {
@@ -979,5 +1049,10 @@ public final class MainActivity extends Activity {
     private OnlineSongResource selectedOnlineResource() {
         Object item = onlineResourceSpinner.getSelectedItem();
         return item instanceof OnlineSongResource ? (OnlineSongResource) item : null;
+    }
+
+    private ImageScore selectedImageScore() {
+        Object item = imageScoreSpinner.getSelectedItem();
+        return item instanceof ImageScore ? (ImageScore) item : null;
     }
 }
