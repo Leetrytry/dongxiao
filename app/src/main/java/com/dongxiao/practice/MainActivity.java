@@ -2,8 +2,10 @@ package com.dongxiao.practice;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -29,6 +31,9 @@ import com.dongxiao.practice.practice.PracticeScore;
 import com.dongxiao.practice.practice.PracticeSessionScorer;
 import com.dongxiao.practice.practice.PracticeStats;
 import com.dongxiao.practice.song.AbcSongImporter;
+import com.dongxiao.practice.song.LocalSongStore;
+import com.dongxiao.practice.song.OnlineSongCatalog;
+import com.dongxiao.practice.song.OnlineSongResource;
 import com.dongxiao.practice.song.PracticeSong;
 import com.dongxiao.practice.song.SongPlayer;
 import com.dongxiao.practice.song.SongRepository;
@@ -61,6 +66,7 @@ public final class MainActivity extends Activity {
     private TextView songTitleText;
     private TextView songMetaText;
     private TextView songStatusText;
+    private TextView onlineResourceText;
     private LinearLayout homeContainer;
     private LinearLayout practiceContainer;
     private LinearLayout songContainer;
@@ -70,6 +76,7 @@ public final class MainActivity extends Activity {
     private Spinner fingeringSpinner;
     private Spinner targetSpinner;
     private Spinner songSpinner;
+    private Spinner onlineResourceSpinner;
     private EditText songUrlEditText;
     private CheckBox autoTargetCheck;
     private Button backButton;
@@ -77,6 +84,8 @@ public final class MainActivity extends Activity {
     private Button songBackButton;
     private Button songPlayButton;
     private Button songImportButton;
+    private Button resourceImportButton;
+    private Button resourceOpenButton;
     private TunerView tunerView;
     private WaveformView waveformView;
     private DynamicScoreView dynamicScoreView;
@@ -85,9 +94,12 @@ public final class MainActivity extends Activity {
     private final PracticeSessionScorer sessionScorer = new PracticeSessionScorer();
     private final List<TargetNote> targets = new ArrayList<>();
     private final List<PracticeSong> songs = new ArrayList<>(SongRepository.defaults());
+    private final List<PracticeSong> localSongs = new ArrayList<>();
+    private final List<OnlineSongResource> onlineResources = OnlineSongCatalog.defaults();
     private AudioAnalyzer audioAnalyzer;
     private SongPlayer songPlayer;
     private ArrayAdapter<PracticeSong> songAdapter;
+    private ArrayAdapter<OnlineSongResource> onlineResourceAdapter;
     private PracticeMode currentPracticeMode;
     private boolean sessionHasFrames = false;
     private boolean importingSong = false;
@@ -138,6 +150,7 @@ public final class MainActivity extends Activity {
         songTitleText = findViewById(R.id.songTitleText);
         songMetaText = findViewById(R.id.songMetaText);
         songStatusText = findViewById(R.id.songStatusText);
+        onlineResourceText = findViewById(R.id.onlineResourceText);
         homeContainer = findViewById(R.id.homeContainer);
         practiceContainer = findViewById(R.id.practiceContainer);
         songContainer = findViewById(R.id.songContainer);
@@ -147,6 +160,7 @@ public final class MainActivity extends Activity {
         fingeringSpinner = findViewById(R.id.fingeringSpinner);
         targetSpinner = findViewById(R.id.targetSpinner);
         songSpinner = findViewById(R.id.songSpinner);
+        onlineResourceSpinner = findViewById(R.id.onlineResourceSpinner);
         songUrlEditText = findViewById(R.id.songUrlEditText);
         autoTargetCheck = findViewById(R.id.autoTargetCheck);
         backButton = findViewById(R.id.backButton);
@@ -154,6 +168,8 @@ public final class MainActivity extends Activity {
         songBackButton = findViewById(R.id.songBackButton);
         songPlayButton = findViewById(R.id.songPlayButton);
         songImportButton = findViewById(R.id.songImportButton);
+        resourceImportButton = findViewById(R.id.resourceImportButton);
+        resourceOpenButton = findViewById(R.id.resourceOpenButton);
         tunerView = findViewById(R.id.tunerView);
         waveformView = findViewById(R.id.waveformView);
         dynamicScoreView = findViewById(R.id.dynamicScoreView);
@@ -406,6 +422,10 @@ public final class MainActivity extends Activity {
             }
         });
 
+        localSongs.clear();
+        localSongs.addAll(LocalSongStore.load(this));
+        songs.addAll(localSongs);
+
         songAdapter = createAdapter(songs);
         songSpinner.setAdapter(songAdapter);
         songSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -419,9 +439,24 @@ public final class MainActivity extends Activity {
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+        onlineResourceAdapter = createAdapter(onlineResources);
+        onlineResourceSpinner.setAdapter(onlineResourceAdapter);
+        onlineResourceSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updateSelectedOnlineResource();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
         songBackButton.setOnClickListener(view -> showHome());
         songPlayButton.setOnClickListener(view -> toggleSongPlayback());
         songImportButton.setOnClickListener(view -> importSongFromUrl());
+        resourceImportButton.setOnClickListener(view -> importSelectedOnlineResource());
+        resourceOpenButton.setOnClickListener(view -> openSelectedOnlineResource());
+        updateSelectedOnlineResource();
         updateSelectedSong();
     }
 
@@ -499,22 +534,25 @@ public final class MainActivity extends Activity {
     }
 
     private void importSongFromUrl() {
-        if (importingSong) {
-            return;
-        }
         String urlText = songUrlEditText.getText().toString().trim();
         if (urlText.isEmpty()) {
             songStatusText.setText("请输入可直接下载 ABC 文本的 HTTPS 链接。");
+            return;
+        }
+        importSongFromUrl(urlText, "正在导入 ABC 曲谱...");
+    }
+
+    private void importSongFromUrl(String urlText, String progressText) {
+        if (importingSong) {
             return;
         }
         if (!urlText.startsWith("https://")) {
             songStatusText.setText("请使用 HTTPS 曲谱链接。");
             return;
         }
-
         importingSong = true;
-        songImportButton.setEnabled(false);
-        songStatusText.setText("正在导入 ABC 曲谱...");
+        setSongImportControlsEnabled(false);
+        songStatusText.setText(progressText);
         stopSongPlayback(false);
 
         new Thread(() -> {
@@ -530,18 +568,78 @@ public final class MainActivity extends Activity {
 
     private void finishSongImport(PracticeSong importedSong) {
         importingSong = false;
-        songImportButton.setEnabled(true);
+        setSongImportControlsEnabled(true);
+        int existingIndex = indexOfSong(importedSong);
+        if (existingIndex >= 0) {
+            songSpinner.setSelection(existingIndex);
+            dynamicScoreView.setSong(importedSong);
+            songStatusText.setText("本地已有：" + importedSong.title);
+            return;
+        }
+        localSongs.add(importedSong);
+        LocalSongStore.save(this, localSongs);
         songs.add(importedSong);
         songAdapter.notifyDataSetChanged();
         songSpinner.setSelection(songs.size() - 1);
         dynamicScoreView.setSong(importedSong);
-        songStatusText.setText("已导入：" + importedSong.title);
+        songStatusText.setText("已添加到本地：" + importedSong.title);
     }
 
     private void failSongImport(String message) {
         importingSong = false;
-        songImportButton.setEnabled(true);
+        setSongImportControlsEnabled(true);
         songStatusText.setText("导入失败：" + (message == null ? "无法读取曲谱。" : message));
+    }
+
+    private void importSelectedOnlineResource() {
+        OnlineSongResource resource = selectedOnlineResource();
+        if (resource == null) {
+            songStatusText.setText("请先选择在线资源。");
+            return;
+        }
+        if (!resource.importable) {
+            songStatusText.setText("当前版本只能直接添加 ABC 曲谱；" + resource.format + " 后续再支持。");
+            return;
+        }
+        importSongFromUrl(resource.url, "正在从 " + resource.source + " 添加到本地...");
+    }
+
+    private void openSelectedOnlineResource() {
+        OnlineSongResource resource = selectedOnlineResource();
+        if (resource == null) {
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(resource.url));
+        startActivity(intent);
+    }
+
+    private void updateSelectedOnlineResource() {
+        OnlineSongResource resource = selectedOnlineResource();
+        if (resource == null) {
+            return;
+        }
+        onlineResourceText.setText(resource.detailText());
+        resourceImportButton.setEnabled(resource.importable && !importingSong);
+    }
+
+    private void setSongImportControlsEnabled(boolean enabled) {
+        songImportButton.setEnabled(enabled);
+        OnlineSongResource resource = selectedOnlineResource();
+        resourceImportButton.setEnabled(enabled && resource != null && resource.importable);
+    }
+
+    private int indexOfSong(PracticeSong target) {
+        for (int i = 0; i < songs.size(); i++) {
+            PracticeSong song = songs.get(i);
+            if (song.title.equals(target.title)
+                    && song.keyLabel.equals(target.keyLabel)
+                    && song.tempoBpm == target.tempoBpm
+                    && song.meterBeats == target.meterBeats
+                    && Math.round(song.totalBeats()) == Math.round(target.totalBeats())) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private String downloadText(String urlText) throws IOException {
@@ -876,5 +974,10 @@ public final class MainActivity extends Activity {
     private PracticeSong selectedSong() {
         Object item = songSpinner.getSelectedItem();
         return item instanceof PracticeSong ? (PracticeSong) item : null;
+    }
+
+    private OnlineSongResource selectedOnlineResource() {
+        Object item = onlineResourceSpinner.getSelectedItem();
+        return item instanceof OnlineSongResource ? (OnlineSongResource) item : null;
     }
 }

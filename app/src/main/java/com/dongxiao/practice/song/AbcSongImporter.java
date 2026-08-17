@@ -20,6 +20,7 @@ public final class AbcSongImporter {
             throw new IllegalArgumentException("曲谱内容为空。");
         }
 
+        abcText = firstTuneBlock(abcText);
         String title = "导入曲目";
         String key = "C";
         int tempoBpm = 90;
@@ -99,8 +100,12 @@ public final class AbcSongImporter {
         int index = 0;
         while (index < body.length()) {
             char c = body.charAt(index);
-            if (Character.isWhitespace(c) || c == '|' || c == ':' || c == '-' || c == '!' || c == '"') {
+            if (Character.isWhitespace(c) || c == '|' || c == ':' || c == '-' || c == '!') {
                 index++;
+                continue;
+            }
+            if (c == '"') {
+                index = skipUntil(body, index + 1, '"');
                 continue;
             }
             if (c == '{') {
@@ -131,6 +136,25 @@ public final class AbcSongImporter {
             }
         }
         return notes;
+    }
+
+    private static String firstTuneBlock(String abcText) {
+        String[] lines = abcText.replace("\r", "").split("\n");
+        StringBuilder builder = new StringBuilder();
+        boolean inTune = false;
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("X:")) {
+                if (inTune) {
+                    break;
+                }
+                inTune = true;
+            }
+            if (inTune) {
+                builder.append(line).append('\n');
+            }
+        }
+        return builder.length() > 0 ? builder.toString() : abcText;
     }
 
     private static ParsedNote parseChord(
