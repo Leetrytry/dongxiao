@@ -26,6 +26,8 @@ public final class PracticeSessionScorer {
     private double maxVibratoRateHz = 0.0;
     private double maxVibratoDepthCents = 0.0;
     private double maxAbsSlideCents = 0.0;
+    private double frameScoreSum = 0.0;
+    private int frameScoreCount = 0;
 
     public void reset() {
         firstFrameMs = -1L;
@@ -46,6 +48,8 @@ public final class PracticeSessionScorer {
         maxVibratoRateHz = 0.0;
         maxVibratoDepthCents = 0.0;
         maxAbsSlideCents = 0.0;
+        frameScoreSum = 0.0;
+        frameScoreCount = 0;
     }
 
     public void update(PitchResult pitch, TargetNote target, PracticeStats stats, long nowMs) {
@@ -75,6 +79,8 @@ public final class PracticeSessionScorer {
         if (absCents <= HIT_TOLERANCE_CENTS) {
             hitFrames++;
         }
+        frameScoreSum += frameScore(absCents, stats.stabilityCents);
+        frameScoreCount++;
         updateRapidMoveCounter(cents, nowMs);
         maxVibratoRateHz = Math.max(maxVibratoRateHz, stats.vibratoRateHz);
         maxVibratoDepthCents = Math.max(maxVibratoDepthCents, stats.vibratoDepthCents);
@@ -103,17 +109,23 @@ public final class PracticeSessionScorer {
         double durationSeconds = voicedMs / 1000.0;
 
         double pitchScore = scoreLowerIsBetter(meanAbsCents, 8.0, 55.0);
-        double stabilityScore = scoreLowerIsBetter(stabilityCents, 8.0, 50.0);
+        double stabilityScore = PracticeStats.stabilityPercent(stabilityCents);
         double durationScore = Math.min(100.0, durationSeconds / targetDuration(mode) * 100.0);
         double hitScore = hitRate;
         double modeScore = modeScore(mode, durationSeconds);
-        int total = clampScore(
-                pitchScore * 0.34
-                        + stabilityScore * 0.24
-                        + hitScore * 0.18
-                        + durationScore * 0.12
-                        + modeScore * 0.12
-        );
+        double frameAverageScore = frameScoreCount == 0 ? 0.0 : frameScoreSum / frameScoreCount;
+        int total;
+        if (mode == PracticeMode.LONG_TONE) {
+            total = clampScore(frameAverageScore);
+        } else {
+            total = clampScore(
+                    pitchScore * 0.34
+                            + stabilityScore * 0.24
+                            + hitScore * 0.18
+                            + durationScore * 0.12
+                            + modeScore * 0.12
+            );
+        }
 
         return new PracticeScore(
                 total,
@@ -122,7 +134,7 @@ public final class PracticeSessionScorer {
                 stabilityCents,
                 hitRate,
                 commentFor(total, meanAbsCents, stabilityCents),
-                detailFor(mode, modeScore)
+                detailFor(mode, modeScore, frameAverageScore)
         );
     }
 
@@ -168,10 +180,10 @@ public final class PracticeSessionScorer {
         }
     }
 
-    private String detailFor(PracticeMode mode, double modeScore) {
+    private String detailFor(PracticeMode mode, double modeScore, double frameAverageScore) {
         switch (mode) {
             case LONG_TONE:
-                return String.format(Locale.CHINA, "长音专项：持续度 %.0f 分。", modeScore);
+                return String.format(Locale.CHINA, "长音专项：逐音平均 %.0f 分，持续度 %.0f 分。", frameAverageScore, modeScore);
             case SCALE:
                 return String.format(Locale.CHINA, "音阶专项：换音/命中 %.0f 分。", modeScore);
             case TONGUING:
@@ -199,6 +211,15 @@ public final class PracticeSessionScorer {
             return 0.0;
         }
         return 100.0 * (poor - value) / (poor - excellent);
+    }
+
+    private static double frameScore(double absCents, double stabilityCents) {
+        double pitchScore = scoreLowerIsBetter(absCents, 8.0, 55.0);
+        double stabilityScore = PracticeStats.stabilityPercent(stabilityCents);
+        double hitScore = absCents <= HIT_TOLERANCE_CENTS
+                ? 100.0
+                : scoreLowerIsBetter(absCents, HIT_TOLERANCE_CENTS, 70.0);
+        return pitchScore * 0.72 + stabilityScore * 0.18 + hitScore * 0.10;
     }
 
     private static double scoreInRange(double value, double minGood, double maxGood, double minOk, double maxOk) {

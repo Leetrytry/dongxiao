@@ -39,7 +39,7 @@ public final class XiaoTuning {
             int octaveAdd = degreeIndex / DEGREE_ORDER.length;
             int semitoneOffset = semitoneOfDegree(degree) + octaveAdd * 12 - tubeSemitone;
             int midi = tubeMidi + semitoneOffset;
-            targets.add(new TargetNote(registerLabel(step) + degree, degree, midi));
+            targets.add(new TargetNote(String.valueOf(degree), degree, midi));
         }
         return targets;
     }
@@ -85,13 +85,4 @@ public final class XiaoTuning {
         throw new IllegalArgumentException("Scale degree must be 1..7: " + degree);
     }
 
-    private static String registerLabel(int step) {
-        if (step < 3) {
-            return "低音";
-        }
-        if (step < 10) {
-            return "中音";
-        }
-        return "高音";
-    }
 }

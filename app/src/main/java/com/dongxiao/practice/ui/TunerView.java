@@ -15,6 +15,7 @@ public final class TunerView extends View {
     private double cents = 0.0;
     private boolean hasPitch = false;
     private String targetLabel = "";
+    private double stabilityPercent = Double.NaN;
 
     public TunerView(Context context) {
         super(context);
@@ -25,9 +26,14 @@ public final class TunerView extends View {
     }
 
     public void setReading(double cents, boolean hasPitch, String targetLabel) {
+        setReading(cents, hasPitch, targetLabel, Double.NaN);
+    }
+
+    public void setReading(double cents, boolean hasPitch, String targetLabel, double stabilityPercent) {
         this.cents = cents;
         this.hasPitch = hasPitch;
         this.targetLabel = targetLabel == null ? "" : targetLabel;
+        this.stabilityPercent = stabilityPercent;
         invalidate();
     }
 
@@ -52,7 +58,8 @@ public final class TunerView extends View {
         paint.setColor(Color.parseColor("#202124"));
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(16.0f * density);
-        canvas.drawText(targetLabel, centerX, 28.0f * density, paint);
+        canvas.drawText(targetLabel, centerX, 24.0f * density, paint);
+        drawStabilityText(canvas, centerX, density);
 
         paint.setColor(Color.parseColor("#E2DED6"));
         RectF bar = new RectF(barLeft, barTop, barRight, barTop + barHeight);
@@ -115,6 +122,17 @@ public final class TunerView extends View {
         canvas.drawText(text, centerX, height - 18.0f * density, paint);
     }
 
+    private void drawStabilityText(Canvas canvas, float centerX, float density) {
+        if (Double.isNaN(stabilityPercent)) {
+            return;
+        }
+        double clamped = Math.max(0.0, Math.min(100.0, stabilityPercent));
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(14.0f * density);
+        paint.setColor(stabilityColor(clamped));
+        canvas.drawText(String.format(Locale.CHINA, "稳定度 %.0f%%", clamped), centerX, 42.0f * density, paint);
+    }
+
     private static float mapCentToX(float cent, float left, float right) {
         return left + (cent + 50.0f) / 100.0f * (right - left);
     }
@@ -124,6 +142,16 @@ public final class TunerView extends View {
             return Color.parseColor("#1D7A6B");
         }
         if (absCents <= 25.0) {
+            return Color.parseColor("#B45F06");
+        }
+        return Color.parseColor("#B3261E");
+    }
+
+    private static int stabilityColor(double percent) {
+        if (percent >= 80.0) {
+            return Color.parseColor("#1D7A6B");
+        }
+        if (percent >= 60.0) {
             return Color.parseColor("#B45F06");
         }
         return Color.parseColor("#B3261E");

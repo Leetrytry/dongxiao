@@ -1,6 +1,9 @@
 package com.dongxiao.practice.practice;
 
 public final class PracticeStats {
+    private static final double STABILITY_EXCELLENT_CENTS = 8.0;
+    private static final double STABILITY_POOR_CENTS = 50.0;
+
     public final boolean hasPitch;
     public final double cents;
     public final double stabilityCents;
@@ -31,5 +34,19 @@ public final class PracticeStats {
         this.onsetCount = onsetCount;
         this.rapidMoveCount = rapidMoveCount;
         this.slideDeltaCents = slideDeltaCents;
+    }
+
+    public static double stabilityPercent(double stabilityCents) {
+        if (Double.isNaN(stabilityCents) || Double.isInfinite(stabilityCents)) {
+            return 0.0;
+        }
+        if (stabilityCents <= STABILITY_EXCELLENT_CENTS) {
+            return 100.0;
+        }
+        if (stabilityCents >= STABILITY_POOR_CENTS) {
+            return 0.0;
+        }
+        return 100.0 * (STABILITY_POOR_CENTS - stabilityCents)
+                / (STABILITY_POOR_CENTS - STABILITY_EXCELLENT_CENTS);
     }
 }

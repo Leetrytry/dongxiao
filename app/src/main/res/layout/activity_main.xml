@@ -319,7 +319,7 @@
                     <com.dongxiao.practice.ui.TunerView
                         android:id="@+id/tunerView"
                         android:layout_width="match_parent"
-                        android:layout_height="108dp"
+                        android:layout_height="148dp"
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
 
@@ -385,7 +385,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="Hz、音名、cent 偏差和稳定度会显示在这里。"
+                        android:text="Hz、音名和 cent 偏差会显示在这里。"
                         android:textColor="@color/muted"
                         android:textSize="12sp" />
 

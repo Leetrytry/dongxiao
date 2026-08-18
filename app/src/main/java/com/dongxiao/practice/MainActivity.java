@@ -479,7 +479,7 @@ public final class MainActivity extends Activity {
         updateInstruction();
         updateTargets();
         pitchText.setText("未检测到稳定音高");
-        detailText.setText("Hz、音名、cent 偏差和稳定度会显示在这里。");
+        detailText.setText("Hz、音名和 cent 偏差会显示在这里。");
         metricText.setText("练习指标等待开始。");
         scorePanel.setVisibility(View.GONE);
         scoreText.setText("");
@@ -800,7 +800,7 @@ public final class MainActivity extends Activity {
             public void onAudioFrame(PitchResult result, float[] samples, int sampleRate, long timestampMs) {
                 runOnUiThread(() -> {
                     waveformView.setSamples(samples);
-                    handleAudioFrame(result, sampleRate, timestampMs);
+                    handleAudioFrame(result, timestampMs);
                 });
             }
 
@@ -841,7 +841,7 @@ public final class MainActivity extends Activity {
         }
     }
 
-    private void handleAudioFrame(PitchResult result, int sampleRate, long timestampMs) {
+    private void handleAudioFrame(PitchResult result, long timestampMs) {
         if (targets.isEmpty()) {
             return;
         }
@@ -860,7 +860,7 @@ public final class MainActivity extends Activity {
         sessionScorer.update(result, target, stats, timestampMs);
         sessionHasFrames = true;
         if (result.voiced) {
-            updateVoicedUi(result, sampleRate, target, mode, stats);
+            updateVoicedUi(result, target, mode, stats);
         } else {
             updateUnvoicedUi(target, mode, stats);
         }
@@ -868,7 +868,6 @@ public final class MainActivity extends Activity {
 
     private void updateVoicedUi(
             PitchResult result,
-            int sampleRate,
             TargetNote target,
             PracticeMode mode,
             PracticeStats stats
@@ -878,7 +877,12 @@ public final class MainActivity extends Activity {
         double centsToNearest = MusicTheory.centsBetween(result.frequencyHz, detectedMidiFrequency);
         double centsToTarget = target.centsFrom(result.frequencyHz);
 
-        tunerView.setReading(centsToTarget, true, "目标 " + target.label);
+        tunerView.setReading(
+                centsToTarget,
+                true,
+                "目标 " + target.label,
+                stabilityPercentForMode(mode, stats)
+        );
         pitchText.setText(String.format(
                 Locale.CHINA,
                 "检测 %s · %s",
@@ -887,24 +891,41 @@ public final class MainActivity extends Activity {
         ));
         detailText.setText(String.format(
                 Locale.CHINA,
-                "目标：%s（%s / %s）\n目标偏差：%s · 最近音偏差：%s\n置信度：%.0f%% · RMS：%.3f · 采样率：%d",
+                "目标：%s（%s / %s）\n目标偏差：%s · 最近音偏差：%s\n幅度：%.0f%%",
                 target.label,
                 MusicTheory.noteName(target.midi),
                 MusicTheory.formatHz(target.frequencyHz),
                 MusicTheory.formatCents(centsToTarget),
                 MusicTheory.formatCents(centsToNearest),
-                result.probability * 100.0,
-                result.rms,
-                sampleRate
+                amplitudePercent(result.rms)
         ));
         metricText.setText(formatMetrics(mode, stats));
     }
 
     private void updateUnvoicedUi(TargetNote target, PracticeMode mode, PracticeStats stats) {
-        tunerView.setReading(0.0, false, "目标 " + target.label);
+        tunerView.setReading(
+                0.0,
+                false,
+                "目标 " + target.label,
+                stabilityPercentForMode(mode, stats)
+        );
         pitchText.setText("未检测到稳定音高");
         detailText.setText("请稳定吹出一个清晰长音，避免麦克风贴得太近或环境噪声过大。");
         metricText.setText(formatMetrics(mode, stats));
+    }
+
+    private static double stabilityPercentForMode(PracticeMode mode, PracticeStats stats) {
+        if (mode != PracticeMode.LONG_TONE || stats == null) {
+            return Double.NaN;
+        }
+        return PracticeStats.stabilityPercent(stats.stabilityCents);
+    }
+
+    private static double amplitudePercent(double rms) {
+        if (Double.isNaN(rms) || Double.isInfinite(rms)) {
+            return 0.0;
+        }
+        return Math.max(0.0, Math.min(100.0, rms * 100.0));
     }
 
     private String formatMetrics(PracticeMode mode, PracticeStats stats) {
@@ -912,9 +933,8 @@ public final class MainActivity extends Activity {
             case LONG_TONE:
                 return String.format(
                         Locale.CHINA,
-                        "连续命中：%.1f 秒\n稳定度：%.1f cent\n目标：偏差小于 25 cent 后持续计时。",
-                        stats.heldSeconds,
-                        stats.stabilityCents
+                        "连续命中：%.1f 秒\n目标：偏差小于 25 cent 后持续计时。",
+                        stats.heldSeconds
                 );
             case SCALE:
                 return String.format(
