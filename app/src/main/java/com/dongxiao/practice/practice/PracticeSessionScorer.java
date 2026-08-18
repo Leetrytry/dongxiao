@@ -3,7 +3,11 @@ package com.dongxiao.practice.practice;
 import com.dongxiao.practice.audio.PitchResult;
 import com.dongxiao.practice.music.TargetNote;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public final class PracticeSessionScorer {
     private static final double HIT_TOLERANCE_CENTS = 25.0;
@@ -28,6 +32,7 @@ public final class PracticeSessionScorer {
     private double maxAbsSlideCents = 0.0;
     private double frameScoreSum = 0.0;
     private int frameScoreCount = 0;
+    private final Map<Integer, NoteAccumulator> noteAccumulators = new LinkedHashMap<>();
 
     public void reset() {
         firstFrameMs = -1L;
@@ -50,6 +55,7 @@ public final class PracticeSessionScorer {
         maxAbsSlideCents = 0.0;
         frameScoreSum = 0.0;
         frameScoreCount = 0;
+        noteAccumulators.clear();
     }
 
     public void update(PitchResult pitch, TargetNote target, PracticeStats stats, long nowMs) {
@@ -67,8 +73,9 @@ public final class PracticeSessionScorer {
 
         double cents = target.centsFrom(pitch.frequencyHz);
         double absCents = Math.abs(cents);
+        long deltaMs = 0L;
         if (lastVoicedMs > 0L) {
-            long deltaMs = Math.max(0L, Math.min(250L, nowMs - lastVoicedMs));
+            deltaMs = Math.max(0L, Math.min(250L, nowMs - lastVoicedMs));
             voicedMs += deltaMs;
         }
         lastVoicedMs = nowMs;
@@ -79,8 +86,15 @@ public final class PracticeSessionScorer {
         if (absCents <= HIT_TOLERANCE_CENTS) {
             hitFrames++;
         }
-        frameScoreSum += frameScore(absCents, stats.stabilityCents);
+        double frameScore = frameScore(absCents, stats.stabilityCents);
+        frameScoreSum += frameScore;
         frameScoreCount++;
+        NoteAccumulator accumulator = noteAccumulators.get(target.midi);
+        if (accumulator == null) {
+            accumulator = new NoteAccumulator(target);
+            noteAccumulators.put(target.midi, accumulator);
+        }
+        accumulator.add(cents, absCents, deltaMs, frameScore);
         updateRapidMoveCounter(cents, nowMs);
         maxVibratoRateHz = Math.max(maxVibratoRateHz, stats.vibratoRateHz);
         maxVibratoDepthCents = Math.max(maxVibratoDepthCents, stats.vibratoDepthCents);
@@ -134,8 +148,20 @@ public final class PracticeSessionScorer {
                 stabilityCents,
                 hitRate,
                 commentFor(total, meanAbsCents, stabilityCents),
-                detailFor(mode, modeScore, frameAverageScore)
+                detailFor(mode, modeScore, frameAverageScore),
+                mode == PracticeMode.LONG_TONE ? buildNoteScores() : null
         );
+    }
+
+    private List<PracticeNoteScore> buildNoteScores() {
+        List<PracticeNoteScore> scores = new ArrayList<>();
+        for (NoteAccumulator accumulator : noteAccumulators.values()) {
+            if (accumulator.voicedFrames == 0) {
+                continue;
+            }
+            scores.add(accumulator.toScore());
+        }
+        return scores;
     }
 
     private void updateOnsetCounter(double rms, long nowMs) {
@@ -256,5 +282,135 @@ public final class PracticeSessionScorer {
             return "主要问题是音高波动较大，先减小气息和口风变化。";
         }
         return "有效练习质量偏低，建议延长吹奏时间并保持目标音。";
+    }
+
+    private static final class NoteAccumulator {
+        private final int scaleDegree;
+        private final int register;
+        private final int midi;
+        private double voicedMs = 0.0;
+        private double sumCents = 0.0;
+        private double sumAbsCents = 0.0;
+        private double sumSquaresCents = 0.0;
+        private double frameScoreSum = 0.0;
+        private int voicedFrames = 0;
+        private int hitFrames = 0;
+
+        NoteAccumulator(TargetNote target) {
+            this.scaleDegree = target.scaleDegree;
+            this.register = target.register;
+            this.midi = target.midi;
+        }
+
+        void add(double cents, double absCents, long deltaMs, double frameScore) {
+            voicedMs += deltaMs;
+            sumCents += cents;
+            sumAbsCents += absCents;
+            sumSquaresCents += cents * cents;
+            frameScoreSum += frameScore;
+            voicedFrames++;
+            if (absCents <= HIT_TOLERANCE_CENTS) {
+                hitFrames++;
+            }
+        }
+
+        PracticeNoteScore toScore() {
+            double meanCents = sumCents / voicedFrames;
+            double meanAbsCents = sumAbsCents / voicedFrames;
+            double stabilityCents = Math.sqrt(Math.max(
+                    0.0,
+                    sumSquaresCents / voicedFrames - meanCents * meanCents
+            ));
+            double hitRate = hitFrames * 100.0 / voicedFrames;
+            double voicedSeconds = voicedMs / 1000.0;
+            int score = clampScore(frameScoreSum / voicedFrames);
+            return new PracticeNoteScore(
+                    scaleDegree,
+                    register,
+                    midi,
+                    score,
+                    voicedSeconds,
+                    meanCents,
+                    meanAbsCents,
+                    stabilityCents,
+                    hitRate,
+                    strengthsFor(score, voicedSeconds, meanAbsCents, stabilityCents, hitRate),
+                    weaknessFor(voicedSeconds, meanCents, meanAbsCents, stabilityCents, hitRate),
+                    suggestionFor(voicedSeconds, meanCents, meanAbsCents, stabilityCents, hitRate)
+            );
+        }
+    }
+
+    private static String strengthsFor(
+            int score,
+            double voicedSeconds,
+            double meanAbsCents,
+            double stabilityCents,
+            double hitRate
+    ) {
+        if (score >= 90) {
+            return "音准、稳定度和命中率都比较扎实。";
+        }
+        if (meanAbsCents <= 12.0 && hitRate >= 80.0) {
+            return "音准接近目标，落在有效范围内的时间较多。";
+        }
+        if (PracticeStats.stabilityPercent(stabilityCents) >= 80.0) {
+            return "气息控制较平稳，音高波动不大。";
+        }
+        if (voicedSeconds >= 2.0) {
+            return "该音保持时间较完整，已经形成可分析的长音。";
+        }
+        return "已经能被系统稳定识别，可作为后续细练基础。";
+    }
+
+    private static String weaknessFor(
+            double voicedSeconds,
+            double meanCents,
+            double meanAbsCents,
+            double stabilityCents,
+            double hitRate
+    ) {
+        if (voicedSeconds < 1.5) {
+            return "该音有效练习时间偏短，评分代表性不足。";
+        }
+        if (meanAbsCents > 35.0) {
+            return meanCents > 0.0
+                    ? "整体偏高，目标音中心没有压稳。"
+                    : "整体偏低，目标音中心没有托住。";
+        }
+        if (stabilityCents > 35.0) {
+            return "音高上下摆动偏大，气息和口风变化较明显。";
+        }
+        if (hitRate < 60.0) {
+            return "进入 ±25 cent 有效区间的时间偏少。";
+        }
+        if (Math.abs(meanCents) > 12.0) {
+            return meanCents > 0.0 ? "平均音高略偏高。" : "平均音高略偏低。";
+        }
+        return "暂无明显短板，重点是继续拉长稳定时间。";
+    }
+
+    private static String suggestionFor(
+            double voicedSeconds,
+            double meanCents,
+            double meanAbsCents,
+            double stabilityCents,
+            double hitRate
+    ) {
+        if (voicedSeconds < 1.5) {
+            return "单独延长这个音，每次至少保持 2 秒以上再换音。";
+        }
+        if (meanAbsCents > 35.0) {
+            return meanCents > 0.0
+                    ? "放松口风并略收气息角度，先把音高向下校准。"
+                    : "加强气息支撑并略收稳口风，先把音高向上校准。";
+        }
+        if (stabilityCents > 35.0) {
+            return "用更均匀的气流吹直音，减少口风、下颌和手指的细小晃动。";
+        }
+        if (hitRate < 60.0) {
+            return "先慢吹找准目标，进入 ±25 cent 后再延长时值。";
+        }
+        return "保持当前口风和气息状态，逐步把稳定时长拉到 6 到 8 秒。";
     }
 }

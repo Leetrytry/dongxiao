@@ -30,6 +30,7 @@ import com.dongxiao.practice.music.TargetNote;
 import com.dongxiao.practice.music.XiaoTuning;
 import com.dongxiao.practice.practice.PracticeAnalyzer;
 import com.dongxiao.practice.practice.PracticeMode;
+import com.dongxiao.practice.practice.PracticeNoteScore;
 import com.dongxiao.practice.practice.PracticeScore;
 import com.dongxiao.practice.practice.PracticeSessionScorer;
 import com.dongxiao.practice.practice.PracticeStats;
@@ -893,7 +894,7 @@ public final class MainActivity extends Activity {
         startButton.setText("开始拾音");
         if (shouldScore) {
             PracticeScore score = sessionScorer.finish(currentPracticeMode);
-            scoreText.setText(score.format());
+            scoreText.setText(formatPracticeScore(score));
             scorePanel.setVisibility(View.VISIBLE);
             statusText.setText("本次练习已结束，评分已生成。");
         } else {
@@ -980,6 +981,35 @@ public final class MainActivity extends Activity {
             return 0.0;
         }
         return Math.max(0.0, Math.min(100.0, rms * 100.0));
+    }
+
+    private CharSequence formatPracticeScore(PracticeScore score) {
+        SpannableStringBuilder builder = new SpannableStringBuilder(score.format());
+        if (!score.noteScores.isEmpty()) {
+            builder.append("\n\n逐音分析");
+            for (PracticeNoteScore noteScore : score.noteScores) {
+                builder.append("\n\n");
+                JianpuNoteSpan.appendTo(builder, new TargetNote(
+                        String.valueOf(noteScore.scaleDegree),
+                        noteScore.scaleDegree,
+                        noteScore.midi,
+                        noteScore.register
+                ));
+                builder.append(String.format(
+                        Locale.CHINA,
+                        "：%d 分 · %.1f 秒 · 平均%s · 稳定度%.0f%% · 命中率%.0f%%\n优点：%s\n不足：%s\n建议：%s",
+                        noteScore.score,
+                        noteScore.voicedSeconds,
+                        MusicTheory.formatCents(noteScore.meanCents),
+                        PracticeStats.stabilityPercent(noteScore.stabilityCents),
+                        noteScore.hitRate,
+                        noteScore.strengths,
+                        noteScore.weaknesses,
+                        noteScore.suggestions
+                ));
+            }
+        }
+        return builder;
     }
 
     private CharSequence formatReferenceText(XiaoTuning tuning, FingeringMode fingeringMode) {
