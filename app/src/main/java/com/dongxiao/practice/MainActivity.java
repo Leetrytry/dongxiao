@@ -21,6 +21,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -290,11 +291,8 @@ public final class MainActivity extends Activity {
             String sealText,
             View.OnClickListener listener
     ) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.HORIZONTAL);
-        card.setGravity(Gravity.CENTER_VERTICAL);
+        FrameLayout card = new FrameLayout(this);
         card.setMinimumHeight(dp(108));
-        card.setPadding(dp(18), dp(16), dp(18), dp(16));
         card.setBackgroundResource(R.drawable.bg_practice_card);
         card.setClickable(true);
         card.setFocusable(true);
@@ -303,11 +301,25 @@ public final class MainActivity extends Activity {
             card.setElevation(dp(3));
         }
 
+        ImageView cardDecoration = createHomeCardDecoration(sealText);
+        FrameLayout.LayoutParams decorationParams = new FrameLayout.LayoutParams(
+                dp("曲".equals(sealText) ? 142 : 126),
+                dp("曲".equals(sealText) ? 112 : 124),
+                Gravity.RIGHT | Gravity.CENTER_VERTICAL
+        );
+        decorationParams.rightMargin = dp(4);
+        card.addView(cardDecoration, decorationParams);
+
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(18), dp(16), dp(18), dp(16));
+
         View seal = createHomeBadge(sealText);
         int badgeSize = "练".equals(sealText) ? dp(52) : dp(44);
         LinearLayout.LayoutParams sealParams = new LinearLayout.LayoutParams(badgeSize, badgeSize);
         sealParams.rightMargin = dp(16);
-        card.addView(seal, sealParams);
+        row.addView(seal, sealParams);
 
         LinearLayout textColumn = new LinearLayout(this);
         textColumn.setOrientation(LinearLayout.VERTICAL);
@@ -339,7 +351,7 @@ public final class MainActivity extends Activity {
         descriptionParams.topMargin = dp(4);
         textColumn.addView(description, descriptionParams);
 
-        card.addView(textColumn, new LinearLayout.LayoutParams(
+        row.addView(textColumn, new LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 1.0f
@@ -360,7 +372,13 @@ public final class MainActivity extends Activity {
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
         actionParams.leftMargin = dp(12);
-        card.addView(action, actionParams);
+        row.addView(action, actionParams);
+
+        card.addView(row, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER_VERTICAL
+        ));
 
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -370,6 +388,17 @@ public final class MainActivity extends Activity {
         card.setLayoutParams(cardParams);
         card.setOnClickListener(listener);
         return card;
+    }
+
+    private ImageView createHomeCardDecoration(String sealText) {
+        ImageView decoration = new ImageView(this);
+        decoration.setImageResource("曲".equals(sealText)
+                ? R.drawable.deco_home_card_song
+                : R.drawable.deco_home_card_xiao);
+        decoration.setAlpha("曲".equals(sealText) ? 0.16f : 0.13f);
+        decoration.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        decoration.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        return decoration;
     }
 
     private View createHomeBadge(String sealText) {
