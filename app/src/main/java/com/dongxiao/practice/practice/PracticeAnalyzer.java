@@ -9,6 +9,8 @@ import java.util.Deque;
 public final class PracticeAnalyzer {
     private static final long HISTORY_MS = 3000L;
     private static final long STABILITY_WINDOW_MS = 2000L;
+    private static final long MIN_STABILITY_SPAN_MS = 700L;
+    private static final int MIN_STABILITY_SAMPLES = 6;
     private static final long SLIDE_WINDOW_MS = 1500L;
     private static final double ONSET_RMS = 0.025;
     private static final double LONG_TONE_TOLERANCE_CENTS = 25.0;
@@ -49,10 +51,12 @@ public final class PracticeAnalyzer {
             lastCents = cents;
         }
 
+        StabilityStats stabilityStats = stability(nowMs);
         return new PracticeStats(
                 hasPitch,
                 cents,
-                stability(nowMs),
+                stabilityStats.cents,
+                stabilityStats.ready,
                 heldSeconds(nowMs),
                 vibratoRateHz(nowMs),
                 vibratoDepthCents(nowMs),
@@ -100,23 +104,32 @@ public final class PracticeAnalyzer {
         return (nowMs - stableSinceMs) / 1000.0;
     }
 
-    private double stability(long nowMs) {
+    private StabilityStats stability(long nowMs) {
         double sum = 0.0;
         double sumSquares = 0.0;
         int count = 0;
+        long firstMs = -1L;
+        long lastMs = -1L;
         for (Sample sample : history) {
             if (sample.hasPitch && nowMs - sample.timestampMs <= STABILITY_WINDOW_MS) {
+                if (firstMs < 0L) {
+                    firstMs = sample.timestampMs;
+                }
+                lastMs = sample.timestampMs;
                 sum += sample.cents;
                 sumSquares += sample.cents * sample.cents;
                 count++;
             }
         }
-        if (count < 2) {
-            return 0.0;
+        boolean ready = count >= MIN_STABILITY_SAMPLES
+                && firstMs >= 0L
+                && lastMs - firstMs >= MIN_STABILITY_SPAN_MS;
+        if (!ready) {
+            return new StabilityStats(Double.NaN, false);
         }
         double mean = sum / count;
         double variance = Math.max(0.0, sumSquares / count - mean * mean);
-        return Math.sqrt(variance);
+        return new StabilityStats(Math.sqrt(variance), true);
     }
 
     private double vibratoRateHz(long nowMs) {
@@ -225,6 +238,16 @@ public final class PracticeAnalyzer {
             this.min = min;
             this.max = max;
             this.durationSeconds = durationSeconds;
+        }
+    }
+
+    private static final class StabilityStats {
+        final double cents;
+        final boolean ready;
+
+        StabilityStats(double cents, boolean ready) {
+            this.cents = cents;
+            this.ready = ready;
         }
     }
 }

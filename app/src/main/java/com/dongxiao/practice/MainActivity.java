@@ -944,12 +944,13 @@ public final class MainActivity extends Activity {
         latestPracticeScore = null;
         scorePanel.setVisibility(View.GONE);
         scoreText.setText("");
+        waveformView.clear();
         resetScrollToTop();
         audioAnalyzer = new AudioAnalyzer(new AudioAnalyzer.Listener() {
             @Override
             public void onAudioFrame(PitchResult result, float[] samples, int sampleRate, long timestampMs) {
                 runOnUiThread(() -> {
-                    waveformView.setSamples(samples);
+                    waveformView.appendSamples(samples, sampleRate);
                     handleAudioFrame(result, timestampMs);
                 });
             }
@@ -1039,7 +1040,8 @@ public final class MainActivity extends Activity {
                 centsToTarget,
                 true,
                 target,
-                stabilityPercentForMode(mode, stats)
+                stabilityPercentForMode(mode, stats),
+                heldSecondsForMode(mode, stats)
         );
         pitchText.setText(String.format(
                 Locale.CHINA,
@@ -1056,7 +1058,8 @@ public final class MainActivity extends Activity {
                 0.0,
                 false,
                 target,
-                stabilityPercentForMode(mode, stats)
+                stabilityPercentForMode(mode, stats),
+                heldSecondsForMode(mode, stats)
         );
         pitchText.setText("未检测到稳定音高");
         detailText.setText("请稳定吹出一个清晰长音，避免麦克风贴得太近或环境噪声过大。");
@@ -1064,10 +1067,24 @@ public final class MainActivity extends Activity {
     }
 
     private static double stabilityPercentForMode(PracticeMode mode, PracticeStats stats) {
-        if (mode != PracticeMode.LONG_TONE || stats == null) {
+        if (mode != PracticeMode.LONG_TONE || stats == null || !stats.hasPitch || !stats.stabilityReady) {
             return Double.NaN;
         }
         return PracticeStats.stabilityPercent(stats.stabilityCents);
+    }
+
+    private static double heldSecondsForMode(PracticeMode mode, PracticeStats stats) {
+        if (mode != PracticeMode.LONG_TONE || stats == null) {
+            return Double.NaN;
+        }
+        return stats.heldSeconds;
+    }
+
+    private static String safeStabilityCents(PracticeStats stats) {
+        if (stats == null || !stats.stabilityReady || Double.isNaN(stats.stabilityCents)) {
+            return "--";
+        }
+        return String.format(Locale.CHINA, "%.1f cent", stats.stabilityCents);
     }
 
     private static double amplitudePercent(double rms) {
@@ -1215,11 +1232,7 @@ public final class MainActivity extends Activity {
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
         secondRowParams.topMargin = dp(8);
-        addMetricTile(secondRow, "稳定度", String.format(
-                Locale.CHINA,
-                "%.0f%%",
-                PracticeStats.stabilityPercent(score.stabilityCents)
-        ));
+        addMetricTile(secondRow, "稳定度", PracticeStats.formatStabilityPercent(score.stabilityCents));
         addMetricTile(secondRow, "命中率", String.format(Locale.CHINA, "%.0f%%", score.hitRate));
         body.addView(secondRow, secondRowParams);
     }
@@ -1287,10 +1300,10 @@ public final class MainActivity extends Activity {
         TextView noteMeta = createText(
                 String.format(
                         Locale.CHINA,
-                        "%.1f秒 · %s · 稳定%.0f%% · 命中%.0f%%",
+                        "%.1f秒 · %s · 稳定%s · 命中%.0f%%",
                         noteScore.voicedSeconds,
                         MusicTheory.formatCents(noteScore.meanCents),
-                        PracticeStats.stabilityPercent(noteScore.stabilityCents),
+                        PracticeStats.formatStabilityPercent(noteScore.stabilityCents),
                         noteScore.hitRate
                 ),
                 12.0f,
@@ -1423,17 +1436,13 @@ public final class MainActivity extends Activity {
     private String formatMetrics(PracticeMode mode, PracticeStats stats) {
         switch (mode) {
             case LONG_TONE:
-                return String.format(
-                        Locale.CHINA,
-                        "连续命中：%.1f 秒\n目标：偏差小于 25 cent 后持续计时。",
-                        stats.heldSeconds
-                );
+                return "目标：偏差小于 25 cent 后持续计时。";
             case SCALE:
                 return String.format(
                         Locale.CHINA,
-                        "当前偏差：%s\n稳定度：%.1f cent\n建议：慢速逐音换指，先稳住再进入下一个音。",
+                        "当前偏差：%s\n稳定度：%s\n建议：慢速逐音换指，先稳住再进入下一个音。",
                         MusicTheory.formatCents(stats.cents),
-                        stats.stabilityCents
+                        safeStabilityCents(stats)
                 );
             case TONGUING:
                 return String.format(

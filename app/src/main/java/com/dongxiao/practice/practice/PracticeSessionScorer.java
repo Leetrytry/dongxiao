@@ -109,7 +109,7 @@ public final class PracticeSessionScorer {
                     0,
                     voicedMs / 1000.0,
                     0.0,
-                    0.0,
+                    Double.NaN,
                     0.0,
                     "有效声音太少，无法评分。",
                     "请至少稳定吹奏 2 秒以上再结束。"
@@ -245,6 +245,9 @@ public final class PracticeSessionScorer {
         double hitScore = absCents <= HIT_TOLERANCE_CENTS
                 ? 100.0
                 : scoreLowerIsBetter(absCents, HIT_TOLERANCE_CENTS, 70.0);
+        if (Double.isNaN(stabilityScore)) {
+            return (pitchScore * 0.72 + hitScore * 0.10) / 0.82;
+        }
         return pitchScore * 0.72 + stabilityScore * 0.18 + hitScore * 0.10;
     }
 

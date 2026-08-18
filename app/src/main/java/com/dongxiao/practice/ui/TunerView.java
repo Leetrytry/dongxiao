@@ -20,6 +20,7 @@ public final class TunerView extends View {
     private int targetDegree = 0;
     private int targetRegister = TargetNote.REGISTER_MIDDLE;
     private double stabilityPercent = Double.NaN;
+    private double heldSeconds = Double.NaN;
 
     public TunerView(Context context) {
         super(context);
@@ -34,12 +35,23 @@ public final class TunerView extends View {
     }
 
     public void setReading(double cents, boolean hasPitch, String targetLabel, double stabilityPercent) {
+        setReading(cents, hasPitch, targetLabel, stabilityPercent, Double.NaN);
+    }
+
+    public void setReading(
+            double cents,
+            boolean hasPitch,
+            String targetLabel,
+            double stabilityPercent,
+            double heldSeconds
+    ) {
         this.cents = cents;
         this.hasPitch = hasPitch;
         this.targetLabel = targetLabel == null ? "" : targetLabel;
         this.targetDegree = 0;
         this.targetRegister = TargetNote.REGISTER_MIDDLE;
         this.stabilityPercent = stabilityPercent;
+        this.heldSeconds = heldSeconds;
         invalidate();
     }
 
@@ -48,12 +60,23 @@ public final class TunerView extends View {
     }
 
     public void setReading(double cents, boolean hasPitch, TargetNote targetNote, double stabilityPercent) {
+        setReading(cents, hasPitch, targetNote, stabilityPercent, Double.NaN);
+    }
+
+    public void setReading(
+            double cents,
+            boolean hasPitch,
+            TargetNote targetNote,
+            double stabilityPercent,
+            double heldSeconds
+    ) {
         this.cents = cents;
         this.hasPitch = hasPitch;
         this.targetLabel = targetNote == null ? "" : "目标 ";
         this.targetDegree = targetNote == null ? 0 : targetNote.scaleDegree;
         this.targetRegister = targetNote == null ? TargetNote.REGISTER_MIDDLE : targetNote.register;
         this.stabilityPercent = stabilityPercent;
+        this.heldSeconds = heldSeconds;
         invalidate();
     }
 
@@ -77,8 +100,8 @@ public final class TunerView extends View {
 
         paint.setColor(Color.parseColor("#202124"));
         paint.setTextSize(16.0f * density);
-        drawTargetLabel(canvas, centerX, 24.0f * density);
-        drawStabilityText(canvas, centerX, density);
+        drawTopMetrics(canvas, width, padding, density);
+        drawTargetLabel(canvas, centerX, 36.0f * density);
 
         paint.setColor(Color.parseColor("#E2DED6"));
         RectF bar = new RectF(barLeft, barTop, barRight, barTop + barHeight);
@@ -163,15 +186,32 @@ public final class TunerView extends View {
         );
     }
 
-    private void drawStabilityText(Canvas canvas, float centerX, float density) {
-        if (Double.isNaN(stabilityPercent)) {
+    private void drawTopMetrics(Canvas canvas, float width, float padding, float density) {
+        if (Double.isNaN(stabilityPercent) && Double.isNaN(heldSeconds)) {
             return;
         }
-        double clamped = Math.max(0.0, Math.min(100.0, stabilityPercent));
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(14.0f * density);
-        paint.setColor(stabilityColor(clamped));
-        canvas.drawText(String.format(Locale.CHINA, "稳定度 %.0f%%", clamped), centerX, 42.0f * density, paint);
+        paint.setTextSize(12.0f * density);
+        float baseline = 19.0f * density;
+        if (!Double.isNaN(heldSeconds)) {
+            paint.setTextAlign(Paint.Align.LEFT);
+            paint.setColor(Color.parseColor("#1D7A6B"));
+            canvas.drawText(
+                    String.format(Locale.CHINA, "命中 %.1fs", Math.max(0.0, heldSeconds)),
+                    padding,
+                    baseline,
+                    paint
+            );
+        }
+        paint.setTextAlign(Paint.Align.RIGHT);
+        String text = "稳定 --";
+        int color = Color.parseColor("#6F6A61");
+        if (!Double.isNaN(stabilityPercent)) {
+            double clamped = Math.max(0.0, Math.min(100.0, stabilityPercent));
+            text = String.format(Locale.CHINA, "稳定 %.0f%%", clamped);
+            color = stabilityColor(clamped);
+        }
+        paint.setColor(color);
+        canvas.drawText(text, width - padding, baseline, paint);
     }
 
     private static float mapCentToX(float cent, float left, float right) {
