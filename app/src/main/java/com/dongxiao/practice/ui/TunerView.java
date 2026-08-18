@@ -8,6 +8,8 @@ import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 
+import com.dongxiao.practice.music.TargetNote;
+
 import java.util.Locale;
 
 public final class TunerView extends View {
@@ -15,6 +17,8 @@ public final class TunerView extends View {
     private double cents = 0.0;
     private boolean hasPitch = false;
     private String targetLabel = "";
+    private int targetDegree = 0;
+    private int targetRegister = TargetNote.REGISTER_MIDDLE;
     private double stabilityPercent = Double.NaN;
 
     public TunerView(Context context) {
@@ -33,6 +37,22 @@ public final class TunerView extends View {
         this.cents = cents;
         this.hasPitch = hasPitch;
         this.targetLabel = targetLabel == null ? "" : targetLabel;
+        this.targetDegree = 0;
+        this.targetRegister = TargetNote.REGISTER_MIDDLE;
+        this.stabilityPercent = stabilityPercent;
+        invalidate();
+    }
+
+    public void setReading(double cents, boolean hasPitch, TargetNote targetNote) {
+        setReading(cents, hasPitch, targetNote, Double.NaN);
+    }
+
+    public void setReading(double cents, boolean hasPitch, TargetNote targetNote, double stabilityPercent) {
+        this.cents = cents;
+        this.hasPitch = hasPitch;
+        this.targetLabel = targetNote == null ? "" : "目标 ";
+        this.targetDegree = targetNote == null ? 0 : targetNote.scaleDegree;
+        this.targetRegister = targetNote == null ? TargetNote.REGISTER_MIDDLE : targetNote.register;
         this.stabilityPercent = stabilityPercent;
         invalidate();
     }
@@ -56,9 +76,8 @@ public final class TunerView extends View {
         canvas.drawRect(0, 0, width, height, paint);
 
         paint.setColor(Color.parseColor("#202124"));
-        paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(16.0f * density);
-        canvas.drawText(targetLabel, centerX, 24.0f * density, paint);
+        drawTargetLabel(canvas, centerX, 24.0f * density);
         drawStabilityText(canvas, centerX, density);
 
         paint.setColor(Color.parseColor("#E2DED6"));
@@ -120,6 +139,28 @@ public final class TunerView extends View {
             text = "等待稳定音高";
         }
         canvas.drawText(text, centerX, height - 18.0f * density, paint);
+    }
+
+    private void drawTargetLabel(Canvas canvas, float centerX, float baseline) {
+        paint.setTextAlign(Paint.Align.CENTER);
+        if (targetDegree <= 0) {
+            canvas.drawText(targetLabel, centerX, baseline, paint);
+            return;
+        }
+
+        float prefixWidth = paint.measureText(targetLabel);
+        float noteWidth = JianpuNoteSpan.measureWidth(paint, targetDegree);
+        float left = centerX - (prefixWidth + noteWidth) / 2.0f;
+        paint.setTextAlign(Paint.Align.LEFT);
+        canvas.drawText(targetLabel, left, baseline, paint);
+        JianpuNoteSpan.drawCentered(
+                canvas,
+                paint,
+                targetDegree,
+                targetRegister,
+                left + prefixWidth + noteWidth / 2.0f,
+                baseline
+        );
     }
 
     private void drawStabilityText(Canvas canvas, float centerX, float density) {

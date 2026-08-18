@@ -8,8 +8,10 @@ import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.SpannableStringBuilder;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -39,6 +41,7 @@ import com.dongxiao.practice.song.JianpuTextSource;
 import com.dongxiao.practice.song.PracticeSong;
 import com.dongxiao.practice.song.SongPlayer;
 import com.dongxiao.practice.ui.DynamicScoreView;
+import com.dongxiao.practice.ui.JianpuNoteSpan;
 import com.dongxiao.practice.ui.TunerView;
 import com.dongxiao.practice.ui.WaveformView;
 
@@ -717,6 +720,39 @@ public final class MainActivity extends Activity {
         return adapter;
     }
 
+    private ArrayAdapter<TargetNote> createTargetAdapter(List<TargetNote> items) {
+        ArrayAdapter<TargetNote> adapter = new ArrayAdapter<TargetNote>(
+                this,
+                android.R.layout.simple_spinner_item,
+                items
+        ) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView view = (TextView) super.getView(position, convertView, parent);
+                bindTargetNoteText(view, getItem(position));
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                TextView view = (TextView) super.getDropDownView(position, convertView, parent);
+                bindTargetNoteText(view, getItem(position));
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        return adapter;
+    }
+
+    private void bindTargetNoteText(TextView view, TargetNote target) {
+        if (target == null) {
+            view.setText("");
+            return;
+        }
+        view.setGravity(Gravity.CENTER_VERTICAL);
+        view.setText(JianpuNoteSpan.textFor(target));
+    }
+
     private int dp(float value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
@@ -738,14 +774,14 @@ public final class MainActivity extends Activity {
         targets.clear();
         targets.addAll(tuning.createTargets(fingeringMode));
 
-        ArrayAdapter<TargetNote> targetAdapter = createAdapter(new ArrayList<>(targets));
+        ArrayAdapter<TargetNote> targetAdapter = createTargetAdapter(new ArrayList<>(targets));
         targetSpinner.setAdapter(targetAdapter);
         if (!targets.isEmpty()) {
             targetSpinner.setSelection(0);
             TargetNote target = targets.get(targetSpinner.getSelectedItemPosition());
-            tunerView.setReading(0.0, false, "目标 " + target.label);
+            tunerView.setReading(0.0, false, target);
             if (statusText != null) {
-                statusText.setText(tuning.referenceText(fingeringMode));
+                statusText.setText(formatReferenceText(tuning, fingeringMode));
             }
             updatePracticeSummary();
         }
@@ -760,13 +796,16 @@ public final class MainActivity extends Activity {
         TargetNote target = selectedTarget();
         String tuningLabel = tuning == null ? "未选调门" : tuning.label;
         String fingeringLabel = fingeringMode == null ? "未选筒音" : fingeringMode.label;
-        String targetLabel;
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+        builder.append(tuningLabel).append(" · ").append(fingeringLabel).append(" · ");
         if (autoTargetCheck != null && autoTargetCheck.isChecked()) {
-            targetLabel = "自动匹配目标音";
+            builder.append("自动匹配目标音");
+        } else if (target == null) {
+            builder.append("未选目标音");
         } else {
-            targetLabel = target == null ? "未选目标音" : target.label;
+            JianpuNoteSpan.appendTo(builder, target);
         }
-        practiceSummaryText.setText(tuningLabel + " · " + fingeringLabel + " · " + targetLabel);
+        practiceSummaryText.setText(builder);
     }
 
     private void updateInstruction() {
@@ -880,7 +919,7 @@ public final class MainActivity extends Activity {
         tunerView.setReading(
                 centsToTarget,
                 true,
-                "目标 " + target.label,
+                target,
                 stabilityPercentForMode(mode, stats)
         );
         pitchText.setText(String.format(
@@ -889,16 +928,7 @@ public final class MainActivity extends Activity {
                 MusicTheory.noteName(detectedMidi),
                 MusicTheory.formatHz(result.frequencyHz)
         ));
-        detailText.setText(String.format(
-                Locale.CHINA,
-                "目标：%s（%s / %s）\n目标偏差：%s · 最近音偏差：%s\n幅度：%.0f%%",
-                target.label,
-                MusicTheory.noteName(target.midi),
-                MusicTheory.formatHz(target.frequencyHz),
-                MusicTheory.formatCents(centsToTarget),
-                MusicTheory.formatCents(centsToNearest),
-                amplitudePercent(result.rms)
-        ));
+        detailText.setText(formatVoicedDetail(target, centsToTarget, centsToNearest, result.rms));
         metricText.setText(formatMetrics(mode, stats));
     }
 
@@ -906,7 +936,7 @@ public final class MainActivity extends Activity {
         tunerView.setReading(
                 0.0,
                 false,
-                "目标 " + target.label,
+                target,
                 stabilityPercentForMode(mode, stats)
         );
         pitchText.setText("未检测到稳定音高");
@@ -926,6 +956,45 @@ public final class MainActivity extends Activity {
             return 0.0;
         }
         return Math.max(0.0, Math.min(100.0, rms * 100.0));
+    }
+
+    private CharSequence formatReferenceText(XiaoTuning tuning, FingeringMode fingeringMode) {
+        int tubeDegree = fingeringMode == null ? 5 : fingeringMode.tubeDegree;
+        TargetNote tubeNote = new TargetNote(
+                String.valueOf(tubeDegree),
+                tubeDegree,
+                tuning.tubeMidi,
+                TargetNote.REGISTER_LOW
+        );
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+        builder.append(tuning.label).append("基准：");
+        JianpuNoteSpan.appendTo(builder, tubeNote);
+        builder.append(" = ")
+                .append(MusicTheory.noteName(tuning.tubeMidi))
+                .append(" / ")
+                .append(MusicTheory.formatHz(MusicTheory.frequencyForMidi(tuning.tubeMidi)));
+        return builder;
+    }
+
+    private CharSequence formatVoicedDetail(
+            TargetNote target,
+            double centsToTarget,
+            double centsToNearest,
+            double rms
+    ) {
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+        builder.append("目标：");
+        JianpuNoteSpan.appendTo(builder, target);
+        builder.append(String.format(
+                Locale.CHINA,
+                "（%s / %s）\n目标偏差：%s · 最近音偏差：%s\n幅度：%.0f%%",
+                MusicTheory.noteName(target.midi),
+                MusicTheory.formatHz(target.frequencyHz),
+                MusicTheory.formatCents(centsToTarget),
+                MusicTheory.formatCents(centsToNearest),
+                amplitudePercent(rms)
+        ));
+        return builder;
     }
 
     private String formatMetrics(PracticeMode mode, PracticeStats stats) {

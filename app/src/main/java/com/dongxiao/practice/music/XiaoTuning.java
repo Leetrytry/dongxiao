@@ -39,7 +39,7 @@ public final class XiaoTuning {
             int octaveAdd = degreeIndex / DEGREE_ORDER.length;
             int semitoneOffset = semitoneOfDegree(degree) + octaveAdd * 12 - tubeSemitone;
             int midi = tubeMidi + semitoneOffset;
-            targets.add(new TargetNote(degreeLabel(degreeIndex, degree), degree, midi));
+            targets.add(new TargetNote(String.valueOf(degree), degree, midi, registerForDegreeIndex(degreeIndex)));
         }
         return targets;
     }
@@ -59,8 +59,7 @@ public final class XiaoTuning {
 
     public String referenceText(FingeringMode fingeringMode) {
         int tubeDegree = fingeringMode == null ? 5 : fingeringMode.tubeDegree;
-        String tubeDegreeLabel = degreeLabel(degreeIndex(tubeDegree), tubeDegree);
-        return label + "基准：" + tubeDegreeLabel + " = "
+        return label + "基准：" + tubeDegree + " = "
                 + MusicTheory.noteName(tubeMidi) + " / "
                 + MusicTheory.formatHz(MusicTheory.frequencyForMidi(tubeMidi));
     }
@@ -86,15 +85,15 @@ public final class XiaoTuning {
         throw new IllegalArgumentException("Scale degree must be 1..7: " + degree);
     }
 
-    private static String degreeLabel(int degreeIndex, int degree) {
+    private static int registerForDegreeIndex(int degreeIndex) {
         int register = degreeIndex / DEGREE_ORDER.length;
         if (register <= 0) {
-            return degree + "\u0323";
+            return TargetNote.REGISTER_LOW;
         }
         if (register == 1) {
-            return String.valueOf(degree);
+            return TargetNote.REGISTER_MIDDLE;
         }
-        return degree + "\u0307";
+        return TargetNote.REGISTER_HIGH;
     }
 
 }
