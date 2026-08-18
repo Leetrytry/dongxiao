@@ -9,6 +9,7 @@ import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -256,134 +257,108 @@ public final class MainActivity extends Activity {
     }
 
     private View createPracticeCard(PracticeMode mode) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setPadding(dp(16), dp(14), dp(16), dp(14));
-        card.setBackgroundResource(R.drawable.bg_practice_card);
-        card.setClickable(true);
-        card.setFocusable(true);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            card.setElevation(dp(1));
-        }
-
-        LinearLayout titleRow = new LinearLayout(this);
-        titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        titleRow.setOrientation(LinearLayout.HORIZONTAL);
-
-        TextView title = new TextView(this);
-        title.setText(mode.label);
-        title.setTextColor(getColorCompat(R.color.ink));
-        title.setTextSize(18.0f);
-        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-
-        TextView seal = new TextView(this);
-        seal.setText("练");
-        seal.setGravity(Gravity.CENTER);
-        seal.setTextColor(getColorCompat(R.color.paper));
-        seal.setTextSize(13.0f);
-        seal.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        seal.setBackgroundResource(R.drawable.bg_seal);
-
-        titleRow.addView(title, new LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1.0f
-        ));
-        titleRow.addView(seal, new LinearLayout.LayoutParams(
-                dp(28),
-                dp(28)
-        ));
-        card.addView(titleRow, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        ));
-
-        TextView description = new TextView(this);
-        description.setText(mode.instruction);
-        description.setTextColor(getColorCompat(R.color.muted));
-        description.setTextSize(13.0f);
-        description.setLineSpacing(dp(2), 1.0f);
-        LinearLayout.LayoutParams descriptionParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
+        return createHomeActionCard(
+                mode.label,
+                mode.instruction,
+                "练",
+                view -> enterPractice(mode)
         );
-        descriptionParams.topMargin = dp(6);
-        card.addView(description, descriptionParams);
-
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        cardParams.bottomMargin = dp(10);
-        card.setLayoutParams(cardParams);
-        card.setOnClickListener(view -> enterPractice(mode));
-        return card;
     }
 
     private View createSongPracticeCard() {
+        return createHomeActionCard(
+                "曲目练习",
+                "选择本地图片谱，播放智能伴奏，并在原图上跟随高亮练习。",
+                "曲",
+                view -> enterSongPractice()
+        );
+    }
+
+    private View createHomeActionCard(
+            String titleText,
+            String descriptionText,
+            String sealText,
+            View.OnClickListener listener
+    ) {
         LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
+        card.setOrientation(LinearLayout.HORIZONTAL);
         card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setPadding(dp(16), dp(14), dp(16), dp(14));
+        card.setMinimumHeight(dp(96));
+        card.setPadding(dp(16), dp(16), dp(16), dp(16));
         card.setBackgroundResource(R.drawable.bg_practice_card);
         card.setClickable(true);
         card.setFocusable(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            card.setElevation(dp(1));
+            card.setElevation(dp(2));
         }
 
-        LinearLayout titleRow = new LinearLayout(this);
-        titleRow.setGravity(Gravity.CENTER_VERTICAL);
-        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        TextView seal = new TextView(this);
+        seal.setText(sealText);
+        seal.setGravity(Gravity.CENTER);
+        seal.setTextColor(getColorCompat(R.color.paper));
+        seal.setTextSize(15.0f);
+        seal.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        seal.setBackgroundResource(R.drawable.bg_seal);
+        LinearLayout.LayoutParams sealParams = new LinearLayout.LayoutParams(dp(40), dp(40));
+        sealParams.rightMargin = dp(16);
+        card.addView(seal, sealParams);
+
+        LinearLayout textColumn = new LinearLayout(this);
+        textColumn.setOrientation(LinearLayout.VERTICAL);
+        textColumn.setGravity(Gravity.CENTER_VERTICAL);
 
         TextView title = new TextView(this);
-        title.setText("曲目练习");
+        title.setText(titleText);
         title.setTextColor(getColorCompat(R.color.ink));
         title.setTextSize(18.0f);
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-
-        TextView seal = new TextView(this);
-        seal.setText("曲");
-        seal.setGravity(Gravity.CENTER);
-        seal.setTextColor(getColorCompat(R.color.paper));
-        seal.setTextSize(13.0f);
-        seal.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        seal.setBackgroundResource(R.drawable.bg_seal);
-
-        titleRow.addView(title, new LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1.0f
-        ));
-        titleRow.addView(seal, new LinearLayout.LayoutParams(
-                dp(28),
-                dp(28)
-        ));
-        card.addView(titleRow, new LinearLayout.LayoutParams(
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
+        textColumn.addView(title, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         ));
 
         TextView description = new TextView(this);
-        description.setText("使用默认图片谱曲库，播放智能伴奏并在原图上高亮当前音符。");
+        description.setText(descriptionText);
         description.setTextColor(getColorCompat(R.color.muted));
         description.setTextSize(13.0f);
         description.setLineSpacing(dp(2), 1.0f);
+        description.setMaxLines(2);
+        description.setEllipsize(TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams descriptionParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        descriptionParams.topMargin = dp(6);
-        card.addView(description, descriptionParams);
+        descriptionParams.topMargin = dp(4);
+        textColumn.addView(description, descriptionParams);
+
+        card.addView(textColumn, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1.0f
+        ));
+
+        TextView action = new TextView(this);
+        action.setText("进入");
+        action.setGravity(Gravity.CENTER);
+        action.setTextColor(getColorCompat(R.color.accent));
+        action.setTextSize(13.0f);
+        action.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        LinearLayout.LayoutParams actionParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        actionParams.leftMargin = dp(12);
+        card.addView(action, actionParams);
 
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        cardParams.bottomMargin = dp(10);
+        cardParams.bottomMargin = dp(12);
         card.setLayoutParams(cardParams);
-        card.setOnClickListener(view -> enterSongPractice());
+        card.setOnClickListener(listener);
         return card;
     }
 

@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
         <LinearLayout
             android:id="@+id/homeContainer"
@@ -37,12 +37,12 @@
                         android:layout_weight="1"
                         android:text="洞箫练习"
                         android:textColor="#FFFFFF"
-                        android:textSize="28sp"
+                        android:textSize="30sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:layout_width="34dp"
-                        android:layout_height="34dp"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
                         android:background="@drawable/bg_seal"
                         android:gravity="center"
                         android:text="箫"
@@ -56,16 +56,60 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:lineSpacingExtra="3dp"
-                    android:text="长音音准、实时波形和技巧指标集中在对应练习页中。"
+                    android:text="先稳音准，再练曲目。长音、波形、评分和本地图片谱都在离线环境中完成。"
                     android:textColor="#DCECDF"
-                    android:textSize="14sp" />
+                    android:textSize="15sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_header_chip"
+                        android:gravity="center"
+                        android:text="实时音准"
+                        android:textColor="#F8FFF9"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_header_chip"
+                        android:gravity="center"
+                        android:text="本地曲库"
+                        android:textColor="#F8FFF9"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_header_chip"
+                        android:gravity="center"
+                        android:text="练后评分"
+                        android:textColor="#F8FFF9"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:text="◇ 选择练习项目"
+                android:layout_marginTop="24dp"
+                android:text="选择练习项目"
                 android:textColor="@color/ink"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -73,8 +117,8 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="进入子页面后再设置调门、筒音和目标音。"
+                android:layout_marginTop="8dp"
+                android:text="按当前目标直接进入练习；调门、筒音和目标音在练习页调整。"
                 android:textColor="@color/muted"
                 android:textSize="14sp" />
 
@@ -82,7 +126,7 @@
                 android:id="@+id/modeList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="16dp"
                 android:orientation="vertical" />
         </LinearLayout>
 
@@ -101,8 +145,8 @@
 
                 <Button
                     android:id="@+id/backButton"
-                    android:layout_width="80dp"
-                    android:layout_height="40dp"
+                    android:layout_width="72dp"
+                    android:layout_height="44dp"
                     android:background="@drawable/bg_button_secondary"
                     android:text="返回"
                     android:textAllCaps="false"
@@ -117,7 +161,7 @@
                     android:layout_weight="1"
                     android:text="长音"
                     android:textColor="@color/ink"
-                    android:textSize="22sp"
+                    android:textSize="24sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -125,7 +169,7 @@
                 android:id="@+id/practiceSummaryText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="12dp"
                 android:ellipsize="end"
                 android:background="@drawable/bg_summary_strip"
                 android:maxLines="1"
@@ -138,7 +182,7 @@
                 android:id="@+id/statusText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="8dp"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textColor="@color/accent"
@@ -147,7 +191,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_panel_bamboo"
                 android:elevation="2dp"
                 android:orientation="vertical">
@@ -178,7 +222,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:baselineAligned="false"
                     android:orientation="horizontal">
 
@@ -199,8 +243,8 @@
                         <Spinner
                             android:id="@+id/tuningSpinner"
                             android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:layout_marginTop="2dp" />
+                            android:layout_height="44dp"
+                            android:layout_marginTop="4dp" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -221,8 +265,8 @@
                         <Spinner
                             android:id="@+id/fingeringSpinner"
                             android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:layout_marginTop="2dp" />
+                            android:layout_height="44dp"
+                            android:layout_marginTop="4dp" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -242,8 +286,8 @@
                         <Spinner
                             android:id="@+id/targetSpinner"
                             android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:layout_marginTop="2dp" />
+                            android:layout_height="44dp"
+                            android:layout_marginTop="4dp" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -251,7 +295,7 @@
                     android:id="@+id/autoTargetCheck"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="8dp"
                     android:checked="true"
                     android:text="自动匹配最近目标音"
                     android:textColor="@color/ink"
@@ -261,7 +305,7 @@
                     android:id="@+id/instructionText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="8dp"
                     android:ellipsize="end"
                     android:lineSpacingExtra="1dp"
                     android:maxLines="2"
@@ -272,8 +316,8 @@
             <Button
                 android:id="@+id/startButton"
                 android:layout_width="match_parent"
-                android:layout_height="46dp"
-                android:layout_marginTop="8dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_button_primary"
                 android:text="开始拾音"
                 android:textAllCaps="false"
@@ -283,7 +327,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -319,14 +363,14 @@
                     <com.dongxiao.practice.ui.TunerView
                         android:id="@+id/tunerView"
                         android:layout_width="match_parent"
-                        android:layout_height="148dp"
-                        android:layout_marginTop="4dp" />
+                        android:layout_height="156dp"
+                        android:layout_marginTop="8dp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:background="@drawable/bg_panel_wave"
                     android:elevation="2dp"
                     android:orientation="vertical">
@@ -357,15 +401,15 @@
                     <com.dongxiao.practice.ui.WaveformView
                         android:id="@+id/waveformView"
                         android:layout_width="match_parent"
-                        android:layout_height="60dp"
-                        android:layout_marginTop="4dp"
+                        android:layout_height="84dp"
+                        android:layout_marginTop="8dp"
                         android:background="@color/surface" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:background="@drawable/bg_readout_compact"
                     android:elevation="2dp"
                     android:orientation="vertical">
@@ -376,7 +420,7 @@
                         android:layout_height="wrap_content"
                         android:text="未检测到稳定音高"
                         android:textColor="@color/ink"
-                        android:textSize="19sp"
+                        android:textSize="20sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -387,7 +431,7 @@
                         android:lineSpacingExtra="2dp"
                         android:text="Hz、音名和 cent 偏差会显示在这里。"
                         android:textColor="@color/muted"
-                        android:textSize="12sp" />
+                        android:textSize="13sp" />
 
                     <TextView
                         android:id="@+id/metricText"
@@ -397,7 +441,7 @@
                         android:lineSpacingExtra="2dp"
                         android:text="练习指标等待开始。"
                         android:textColor="@color/ink"
-                        android:textSize="13sp" />
+                        android:textSize="14sp" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -405,7 +449,7 @@
                 android:id="@+id/scorePanel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_panel_score"
                 android:elevation="2dp"
                 android:orientation="vertical"
@@ -464,8 +508,8 @@
 
                 <Button
                     android:id="@+id/songBackButton"
-                    android:layout_width="80dp"
-                    android:layout_height="40dp"
+                    android:layout_width="72dp"
+                    android:layout_height="44dp"
                     android:background="@drawable/bg_button_secondary"
                     android:text="返回"
                     android:textAllCaps="false"
@@ -480,7 +524,7 @@
                     android:layout_weight="1"
                     android:text="曲目练习"
                     android:textColor="@color/ink"
-                    android:textSize="22sp"
+                    android:textSize="24sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -488,7 +532,7 @@
                 android:id="@+id/songMetaText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="12dp"
                 android:background="@drawable/bg_summary_strip"
                 android:ellipsize="end"
                 android:maxLines="1"
@@ -500,7 +544,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_panel_bamboo"
                 android:elevation="2dp"
                 android:orientation="vertical">
@@ -531,14 +575,36 @@
                 <Spinner
                     android:id="@+id/songSpinner"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="8dp" />
+                    android:layout_height="48dp"
+                    android:layout_marginTop="12dp" />
             </LinearLayout>
+
+            <Button
+                android:id="@+id/songPlayButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_button_primary"
+                android:text="播放伴奏"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/songStatusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_summary_strip"
+                android:lineSpacingExtra="3dp"
+                android:text="智能伴奏会按谱面节奏播放，当前音符会同步高亮。"
+                android:textColor="@color/muted"
+                android:textSize="13sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_panel_tuner"
                 android:elevation="2dp"
                 android:orientation="vertical">
@@ -570,14 +636,14 @@
                     android:id="@+id/dynamicScoreView"
                     android:layout_width="match_parent"
                     android:layout_height="360dp"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="8dp"
                     android:background="@color/paper" />
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_panel_wave"
                 android:elevation="2dp"
                 android:orientation="vertical">
@@ -608,20 +674,20 @@
                 <Spinner
                     android:id="@+id/imageScoreSpinner"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="8dp" />
+                    android:layout_height="48dp"
+                    android:layout_marginTop="12dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="8dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <Button
                         android:id="@+id/imageScorePrevButton"
-                        android:layout_width="72dp"
-                        android:layout_height="40dp"
+                        android:layout_width="80dp"
+                        android:layout_height="44dp"
                         android:background="@drawable/bg_button_secondary"
                         android:text="上一页"
                         android:textAllCaps="false"
@@ -642,8 +708,8 @@
 
                     <Button
                         android:id="@+id/imageScoreNextButton"
-                        android:layout_width="72dp"
-                        android:layout_height="40dp"
+                        android:layout_width="80dp"
+                        android:layout_height="44dp"
                         android:background="@drawable/bg_button_secondary"
                         android:text="下一页"
                         android:textAllCaps="false"
@@ -655,7 +721,7 @@
                     android:id="@+id/imageScoreView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="12dp"
                     android:adjustViewBounds="true"
                     android:background="@color/paper"
                     android:contentDescription="本地图片谱"
@@ -663,27 +729,6 @@
                     android:scaleType="fitCenter" />
             </LinearLayout>
 
-            <Button
-                android:id="@+id/songPlayButton"
-                android:layout_width="match_parent"
-                android:layout_height="46dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_button_primary"
-                android:text="播放伴奏"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
-
-            <TextView
-                android:id="@+id/songStatusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/bg_summary_strip"
-                android:lineSpacingExtra="2dp"
-                android:text="智能伴奏会按谱面节奏播放，当前音符会同步高亮。"
-                android:textColor="@color/muted"
-                android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>
