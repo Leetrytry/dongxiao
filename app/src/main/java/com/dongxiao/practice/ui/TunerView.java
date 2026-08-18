@@ -13,6 +13,15 @@ import com.dongxiao.practice.music.TargetNote;
 import java.util.Locale;
 
 public final class TunerView extends View {
+    private static final int CHART_SURFACE = Color.argb(218, 248, 243, 230);
+    private static final int INK = Color.rgb(25, 38, 50);
+    private static final int MUTED = Color.rgb(111, 106, 97);
+    private static final int GUIDE = Color.rgb(213, 202, 184);
+    private static final int CENTER_GUIDE = Color.rgb(29, 122, 107);
+    private static final int ACCENT = Color.rgb(29, 122, 107);
+    private static final int WARNING = Color.rgb(180, 95, 6);
+    private static final int DANGER = Color.rgb(179, 38, 30);
+
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private double cents = 0.0;
     private boolean hasPitch = false;
@@ -93,17 +102,18 @@ public final class TunerView extends View {
         float barHeight = 10.0f * density;
         float barLeft = padding;
         float barRight = width - padding;
+        float cornerRadius = 12.0f * density;
 
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.parseColor("#FFFFFF"));
-        canvas.drawRect(0, 0, width, height, paint);
+        paint.setColor(CHART_SURFACE);
+        canvas.drawRoundRect(new RectF(0, 0, width, height), cornerRadius, cornerRadius, paint);
 
-        paint.setColor(Color.parseColor("#202124"));
+        paint.setColor(INK);
         paint.setTextSize(16.0f * density);
         drawTopMetrics(canvas, width, padding, density);
         drawTargetLabel(canvas, centerX, 36.0f * density);
 
-        paint.setColor(Color.parseColor("#E2DED6"));
+        paint.setColor(GUIDE);
         RectF bar = new RectF(barLeft, barTop, barRight, barTop + barHeight);
         canvas.drawRoundRect(bar, barHeight / 2.0f, barHeight / 2.0f, paint);
 
@@ -120,7 +130,7 @@ public final class TunerView extends View {
         int[] tickValues = {-50, -25, 0, 25, 50};
         for (int tick : tickValues) {
             float x = mapCentToX(tick, barLeft, barRight);
-            paint.setColor(tick == 0 ? Color.parseColor("#1D7A6B") : Color.parseColor("#9B958C"));
+            paint.setColor(tick == 0 ? CENTER_GUIDE : MUTED);
             float top = tick == 0 ? barTop - 18.0f * density : barTop - 10.0f * density;
             float bottom = barTop + 20.0f * density;
             canvas.drawLine(x, top, x, bottom, paint);
@@ -138,7 +148,7 @@ public final class TunerView extends View {
     ) {
         float clampedCents = (float) Math.max(-50.0, Math.min(50.0, cents));
         float x = hasPitch ? mapCentToX(clampedCents, barLeft, barRight) : (barLeft + barRight) / 2.0f;
-        int color = hasPitch ? needleColor(Math.abs(cents)) : Color.parseColor("#9B958C");
+        int color = hasPitch ? needleColor(Math.abs(cents)) : MUTED;
 
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(color);
@@ -152,7 +162,7 @@ public final class TunerView extends View {
     private void drawCentsText(Canvas canvas, float centerX, float height, float density) {
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(18.0f * density);
-        paint.setColor(hasPitch ? needleColor(Math.abs(cents)) : Color.parseColor("#6F6A61"));
+        paint.setColor(hasPitch ? needleColor(Math.abs(cents)) : MUTED);
 
         String text;
         if (hasPitch) {
@@ -194,7 +204,7 @@ public final class TunerView extends View {
         float baseline = 19.0f * density;
         if (!Double.isNaN(heldSeconds)) {
             paint.setTextAlign(Paint.Align.LEFT);
-            paint.setColor(Color.parseColor("#1D7A6B"));
+            paint.setColor(ACCENT);
             canvas.drawText(
                     String.format(Locale.CHINA, "命中 %.1fs", Math.max(0.0, heldSeconds)),
                     padding,
@@ -204,7 +214,7 @@ public final class TunerView extends View {
         }
         paint.setTextAlign(Paint.Align.RIGHT);
         String text = "稳定 --";
-        int color = Color.parseColor("#6F6A61");
+        int color = MUTED;
         if (!Double.isNaN(stabilityPercent)) {
             double clamped = Math.max(0.0, Math.min(100.0, stabilityPercent));
             text = String.format(Locale.CHINA, "稳定 %.0f%%", clamped);
@@ -220,21 +230,21 @@ public final class TunerView extends View {
 
     private static int needleColor(double absCents) {
         if (absCents <= 12.0) {
-            return Color.parseColor("#1D7A6B");
+            return ACCENT;
         }
         if (absCents <= 25.0) {
-            return Color.parseColor("#B45F06");
+            return WARNING;
         }
-        return Color.parseColor("#B3261E");
+        return DANGER;
     }
 
     private static int stabilityColor(double percent) {
         if (percent >= 80.0) {
-            return Color.parseColor("#1D7A6B");
+            return ACCENT;
         }
         if (percent >= 60.0) {
-            return Color.parseColor("#B45F06");
+            return WARNING;
         }
-        return Color.parseColor("#B3261E");
+        return DANGER;
     }
 }

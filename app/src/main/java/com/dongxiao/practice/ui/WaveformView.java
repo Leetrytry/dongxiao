@@ -4,13 +4,24 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
 
 public final class WaveformView extends View {
-    private static final float WINDOW_SECONDS = 4.0f;
+    private static final float WINDOW_SECONDS = 0.012f;
+    private static final float TRACE_POINTS_PER_PIXEL = 0.55f;
+    private static final float TRACE_VERTICAL_SCALE = 0.9f;
+    private static final int TRACE_SMOOTHING_RADIUS = 2;
+    private static final int CHART_SURFACE = Color.argb(218, 248, 243, 230);
+    private static final int GUIDE = Color.rgb(214, 202, 184);
+    private static final int GUIDE_SOFT = Color.rgb(226, 216, 199);
+    private static final int MUTED = Color.rgb(111, 106, 97);
+    private static final int ACCENT = Color.rgb(29, 122, 107);
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Path waveformPath = new Path();
     private float[] timelineSamples = new float[0];
     private int timelineSampleRate = 0;
     private int writeIndex = 0;
@@ -64,20 +75,21 @@ public final class WaveformView extends View {
         float bottom = height - padding - 16.0f * density;
         float midY = (top + bottom) / 2.0f;
         float halfHeight = Math.max(1.0f, (bottom - top) / 2.0f);
+        float cornerRadius = 12.0f * density;
 
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.parseColor("#FFFFFF"));
-        canvas.drawRect(0, 0, width, height, paint);
+        paint.setColor(CHART_SURFACE);
+        canvas.drawRoundRect(new RectF(0, 0, width, height), cornerRadius, cornerRadius, paint);
 
         drawAmplitudeAxis(canvas, axisX, left, right, top, midY, bottom, density);
         drawTimeAxis(canvas, left, right, bottom, density);
 
-        paint.setColor(Color.parseColor("#E8E1D6"));
+        paint.setColor(GUIDE_SOFT);
         paint.setStrokeWidth(1.0f * density);
         canvas.drawLine(left, midY, right, midY, paint);
 
         if (sampleCount < 2 || timelineSamples.length == 0 || width <= left + padding) {
-            paint.setColor(Color.parseColor("#9B958C"));
+            paint.setColor(MUTED);
             paint.setTextAlign(Paint.Align.CENTER);
             paint.setTextSize(13.0f * density);
             canvas.drawText("等待音频波形", width / 2.0f, midY - 8.0f * density, paint);
@@ -86,35 +98,40 @@ public final class WaveformView extends View {
 
         float rmsHeight = Math.min(1.0f, calculateRms()) * halfHeight;
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.argb(38, 29, 122, 107));
+        paint.setColor(Color.argb(32, 29, 122, 107));
         canvas.drawRect(left, midY - rmsHeight, right, midY + rmsHeight, paint);
 
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1.5f * density);
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setColor(Color.parseColor("#1D7A6B"));
+        paint.setStrokeJoin(Paint.Join.ROUND);
 
-        int points = Math.max(2, (int) (right - left));
-        int maxSamples = timelineSamples.length;
-        int emptySamples = maxSamples - sampleCount;
-        for (int point = 0; point < points; point++) {
-            int start = point * maxSamples / points - emptySamples;
-            int end = Math.max(start + 1, (point + 1) * maxSamples / points - emptySamples);
-            if (end <= 0 || start >= sampleCount) {
-                continue;
-            }
-            start = Math.max(0, start);
-            end = Math.min(sampleCount, end);
-            float min = 1.0f;
-            float max = -1.0f;
-            for (int i = start; i < end; i++) {
-                float sample = sampleAtOffset(i);
-                min = Math.min(min, sample);
-                max = Math.max(max, sample);
-            }
+        int points = Math.min(
+                sampleCount,
+                Math.max(2, (int) ((right - left) * TRACE_POINTS_PER_PIXEL))
+        );
+        waveformPath.reset();
+        float previousX = left;
+        float previousY = sampleToY(0, midY, halfHeight);
+        waveformPath.moveTo(previousX, previousY);
+        for (int point = 1; point < points; point++) {
+            int sampleOffset = point * (sampleCount - 1) / (points - 1);
             float x = left + (right - left) * point / (points - 1.0f);
-            canvas.drawLine(x, midY - max * halfHeight, x, midY - min * halfHeight, paint);
+            float y = sampleToY(sampleOffset, midY, halfHeight);
+            float midPointX = (previousX + x) / 2.0f;
+            float midPointY = (previousY + y) / 2.0f;
+            waveformPath.quadTo(previousX, previousY, midPointX, midPointY);
+            previousX = x;
+            previousY = y;
         }
+        waveformPath.lineTo(previousX, previousY);
+
+        paint.setStrokeWidth(4.0f * density);
+        paint.setColor(Color.argb(48, 29, 122, 107));
+        canvas.drawPath(waveformPath, paint);
+
+        paint.setStrokeWidth(2.2f * density);
+        paint.setColor(ACCENT);
+        canvas.drawPath(waveformPath, paint);
 
         paint.setStyle(Paint.Style.FILL);
     }
@@ -142,7 +159,7 @@ public final class WaveformView extends View {
     ) {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.0f * density);
-        paint.setColor(Color.parseColor("#D8D0C4"));
+        paint.setColor(GUIDE);
         canvas.drawLine(axisX, top, axisX, bottom, paint);
         canvas.drawLine(axisX - 3.0f * density, top, left, top, paint);
         canvas.drawLine(axisX - 3.0f * density, midY, right, midY, paint);
@@ -151,7 +168,7 @@ public final class WaveformView extends View {
         paint.setStyle(Paint.Style.FILL);
         paint.setTextAlign(Paint.Align.RIGHT);
         paint.setTextSize(10.0f * density);
-        paint.setColor(Color.parseColor("#7A7167"));
+        paint.setColor(MUTED);
         float labelX = axisX - 5.0f * density;
         canvas.drawText("+1", labelX, top + 4.0f * density, paint);
         canvas.drawText("0", labelX, midY + 4.0f * density, paint);
@@ -161,17 +178,17 @@ public final class WaveformView extends View {
     private void drawTimeAxis(Canvas canvas, float left, float right, float bottom, float density) {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.0f * density);
-        paint.setColor(Color.parseColor("#D8D0C4"));
+        paint.setColor(GUIDE);
         canvas.drawLine(left, bottom, right, bottom, paint);
 
         paint.setStyle(Paint.Style.FILL);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(10.0f * density);
-        paint.setColor(Color.parseColor("#7A7167"));
+        paint.setColor(MUTED);
         float labelY = bottom + 13.0f * density;
-        canvas.drawText(String.format("-%.0fs", WINDOW_SECONDS), left, labelY, paint);
-        canvas.drawText(String.format("-%.0fs", WINDOW_SECONDS / 2.0f), (left + right) / 2.0f, labelY, paint);
-        canvas.drawText("0s", right, labelY, paint);
+        canvas.drawText(formatTimeLabel(WINDOW_SECONDS), left, labelY, paint);
+        canvas.drawText(formatTimeLabel(WINDOW_SECONDS / 2.0f), (left + right) / 2.0f, labelY, paint);
+        canvas.drawText("0ms", right, labelY, paint);
     }
 
     private float calculateRms() {
@@ -191,7 +208,31 @@ public final class WaveformView extends View {
         return timelineSamples[(oldestIndex + offset) % timelineSamples.length];
     }
 
+    private float sampleToY(int sampleOffset, float midY, float halfHeight) {
+        return midY - smoothedSampleAtOffset(sampleOffset) * halfHeight * TRACE_VERTICAL_SCALE;
+    }
+
+    private float smoothedSampleAtOffset(int offset) {
+        float sum = 0.0f;
+        int count = 0;
+        for (int delta = -TRACE_SMOOTHING_RADIUS; delta <= TRACE_SMOOTHING_RADIUS; delta++) {
+            int safeOffset = offset + delta;
+            if (safeOffset >= 0 && safeOffset < sampleCount) {
+                sum += sampleAtOffset(safeOffset);
+                count++;
+            }
+        }
+        return count == 0 ? 0.0f : sum / count;
+    }
+
     private static float clamp(float value) {
         return Math.max(-1.0f, Math.min(1.0f, value));
+    }
+
+    private static String formatTimeLabel(float seconds) {
+        if (seconds < 1.0f) {
+            return String.format("-%.0fms", seconds * 1000.0f);
+        }
+        return String.format("-%.0fs", seconds);
     }
 }

@@ -10,18 +10,18 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/homeContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="20dp">
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="116dp"
                 android:background="@drawable/bg_header"
                 android:clipToOutline="true">
 
@@ -38,7 +38,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="24dp">
+                    android:paddingLeft="20dp"
+                    android:paddingTop="6dp"
+                    android:paddingRight="20dp"
+                    android:paddingBottom="6dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -67,55 +70,10 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:lineSpacingExtra="3dp"
-                        android:text="先稳音准，再练曲目。长音、波形、评分和本地图片谱都在离线环境中完成。"
+                        android:layout_marginTop="4dp"
+                        android:text="先稳音准，再练曲目。"
                         android:textColor="#EAF5E5"
-                        android:textSize="15sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginRight="6dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_header_chip"
-                            android:gravity="center"
-                            android:text="实时音准"
-                            android:textColor="#F8FFF9"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginLeft="6dp"
-                            android:layout_marginRight="6dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_header_chip"
-                            android:gravity="center"
-                            android:text="本地曲库"
-                            android:textColor="#F8FFF9"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginLeft="6dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_header_chip"
-                            android:gravity="center"
-                            android:text="练后评分"
-                            android:textColor="#F8FFF9"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+                        android:textSize="14sp" />
                 </LinearLayout>
             </FrameLayout>
 
@@ -128,14 +86,6 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="按当前目标直接进入练习；调门、筒音和目标音在练习页调整。"
-                android:textColor="@color/muted"
-                android:textSize="14sp" />
-
             <LinearLayout
                 android:id="@+id/modeList"
                 android:layout_width="match_parent"
@@ -144,59 +94,74 @@
                 android:orientation="vertical" />
         </LinearLayout>
 
-        <LinearLayout
+        <FrameLayout
             android:id="@+id/practiceContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/practiceHeaderImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0.62"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop"
+                android:src="@drawable/deco_practice_header_xiao" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#70F8F3E6" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="20dp"
+                android:paddingTop="64dp"
+                android:paddingRight="20dp"
+                android:paddingBottom="20dp">
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="116dp"
                 android:background="@drawable/bg_panel_frame"
                 android:clipToOutline="true"
-                android:elevation="2dp"
-                android:minHeight="80dp">
-
-                <ImageView
-                    android:id="@+id/practiceHeaderImage"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:alpha="0.24"
-                    android:contentDescription="@null"
-                    android:importantForAccessibility="no"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/deco_practice_header_xiao" />
+                android:elevation="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
-
-                    <Button
-                        android:id="@+id/backButton"
-                        android:layout_width="72dp"
-                        android:layout_height="48dp"
-                        android:background="@drawable/bg_button_art_overlay"
-                        android:text="返回"
-                        android:textAllCaps="false"
-                        android:textColor="@color/accent_dark"
-                        android:textSize="14sp" />
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingLeft="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingRight="16dp"
+                    android:paddingBottom="8dp">
 
                     <TextView
                         android:id="@+id/modeTitleText"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="12dp"
-                        android:layout_weight="1"
                         android:fontFamily="serif"
+                        android:gravity="center"
                         android:text="长音"
                         android:textColor="@color/accent_dark"
                         android:textSize="24sp"
                         android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/instructionText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:lineSpacingExtra="2dp"
+                        android:maxLines="2"
+                        android:textColor="@color/accent_dark"
+                        android:textSize="13sp" />
                 </LinearLayout>
             </FrameLayout>
 
@@ -204,31 +169,33 @@
                 android:id="@+id/practiceSummaryText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:ellipsize="end"
+                android:layout_marginTop="8dp"
                 android:background="@drawable/bg_summary_strip_art"
+                android:ellipsize="end"
                 android:maxLines="1"
                 android:text="F调 · 筒音作5 · 自动匹配目标音"
                 android:textColor="@color/accent_dark"
                 android:textSize="13sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/statusText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="4dp"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textColor="@color/accent"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                android:visibility="gone" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_panel_bamboo"
-                android:elevation="2dp"
+                android:elevation="0dp"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -257,105 +224,106 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="8dp"
                     android:baselineAligned="false"
                     android:orientation="horizontal">
 
-                    <LinearLayout
+                    <FrameLayout
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="44dp"
                         android:layout_marginRight="4dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="调门"
-                            android:textColor="@color/muted"
-                            android:textSize="12sp" />
+                        android:layout_weight="0.82"
+                        android:background="@drawable/bg_spinner_shell">
 
                         <Spinner
                             android:id="@+id/tuningSpinner"
                             android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:layout_marginTop="4dp"
-                            android:background="@drawable/bg_spinner_field" />
-                    </LinearLayout>
+                            android:layout_height="match_parent"
+                            android:background="@android:color/transparent" />
 
-                    <LinearLayout
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="right|center_vertical"
+                            android:clickable="false"
+                            android:contentDescription="@null"
+                            android:importantForAccessibility="no"
+                            android:paddingLeft="4dp"
+                            android:paddingRight="6dp"
+                            android:src="@drawable/ic_spinner_chevron"
+                            android:tint="@color/accent_dark" />
+                    </FrameLayout>
+
+                    <FrameLayout
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="44dp"
                         android:layout_marginLeft="4dp"
                         android:layout_marginRight="4dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="筒音"
-                            android:textColor="@color/muted"
-                            android:textSize="12sp" />
+                        android:layout_weight="1.18"
+                        android:background="@drawable/bg_spinner_shell">
 
                         <Spinner
                             android:id="@+id/fingeringSpinner"
                             android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:layout_marginTop="4dp"
-                            android:background="@drawable/bg_spinner_field" />
-                    </LinearLayout>
+                            android:layout_height="match_parent"
+                            android:background="@android:color/transparent" />
 
-                    <LinearLayout
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="right|center_vertical"
+                            android:clickable="false"
+                            android:contentDescription="@null"
+                            android:importantForAccessibility="no"
+                            android:paddingLeft="4dp"
+                            android:paddingRight="6dp"
+                            android:src="@drawable/ic_spinner_chevron"
+                            android:tint="@color/accent_dark" />
+                    </FrameLayout>
+
+                    <FrameLayout
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="44dp"
                         android:layout_marginLeft="4dp"
                         android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="目标音"
-                            android:textColor="@color/muted"
-                            android:textSize="12sp" />
+                        android:background="@drawable/bg_spinner_shell">
 
                         <Spinner
                             android:id="@+id/targetSpinner"
                             android:layout_width="match_parent"
-                            android:layout_height="48dp"
-                            android:layout_marginTop="4dp"
-                            android:background="@drawable/bg_spinner_field" />
-                    </LinearLayout>
+                            android:layout_height="match_parent"
+                            android:background="@android:color/transparent" />
+
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="right|center_vertical"
+                            android:clickable="false"
+                            android:contentDescription="@null"
+                            android:importantForAccessibility="no"
+                            android:paddingLeft="4dp"
+                            android:paddingRight="6dp"
+                            android:src="@drawable/ic_spinner_chevron"
+                            android:tint="@color/accent_dark" />
+                    </FrameLayout>
                 </LinearLayout>
 
                 <CheckBox
                     android:id="@+id/autoTargetCheck"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="6dp"
                     android:checked="true"
                     android:text="自动匹配最近目标音"
                     android:textColor="@color/ink"
                     android:textSize="13sp" />
-
-                <TextView
-                    android:id="@+id/instructionText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:ellipsize="end"
-                    android:lineSpacingExtra="1dp"
-                    android:maxLines="2"
-                    android:textColor="@color/muted"
-                    android:textSize="12sp" />
             </LinearLayout>
 
             <Button
                 android:id="@+id/startButton"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="16dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_button_primary"
                 android:text="开始拾音"
                 android:textAllCaps="false"
@@ -365,14 +333,14 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="10dp"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_panel_tuner"
-                    android:elevation="2dp"
+                    android:elevation="0dp"
                     android:orientation="vertical">
 
                     <LinearLayout
@@ -401,16 +369,16 @@
                     <com.dongxiao.practice.ui.TunerView
                         android:id="@+id/tunerView"
                         android:layout_width="match_parent"
-                        android:layout_height="156dp"
-                        android:layout_marginTop="8dp" />
+                        android:layout_height="132dp"
+                        android:layout_marginTop="6dp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="10dp"
                     android:background="@drawable/bg_panel_wave"
-                    android:elevation="2dp"
+                    android:elevation="0dp"
                     android:orientation="vertical">
 
                     <LinearLayout
@@ -439,18 +407,18 @@
                     <com.dongxiao.practice.ui.WaveformView
                         android:id="@+id/waveformView"
                         android:layout_width="match_parent"
-                        android:layout_height="84dp"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_plot_surface" />
+                        android:layout_height="72dp"
+                        android:layout_marginTop="6dp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="10dp"
                     android:background="@drawable/bg_readout_compact"
-                    android:elevation="2dp"
-                    android:orientation="vertical">
+                    android:elevation="0dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
                     <TextView
                         android:id="@+id/pitchText"
@@ -489,7 +457,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/bg_panel_score"
-                android:elevation="2dp"
+                android:elevation="0dp"
                 android:orientation="vertical"
                 android:visibility="gone">
 
@@ -541,56 +509,77 @@
                     android:textColor="#FFFFFF"
                     android:textSize="15sp" />
             </LinearLayout>
-        </LinearLayout>
+            </LinearLayout>
 
-        <LinearLayout
+            <ImageButton
+                android:id="@+id/backButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="top|left"
+                android:layout_marginLeft="8dp"
+                android:layout_marginTop="8dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="返回首页"
+                android:importantForAccessibility="yes"
+                android:padding="10dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_back_chevron"
+                android:stateListAnimator="@null"
+                android:tint="@color/accent_dark" />
+        </FrameLayout>
+
+        <FrameLayout
             android:id="@+id/songContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:visibility="gone">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0.64"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop"
+                android:src="@drawable/deco_song_header_mountains" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#70F8F3E6" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="20dp"
+                android:paddingTop="64dp"
+                android:paddingRight="20dp"
+                android:paddingBottom="20dp">
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="68dp"
                 android:background="@drawable/bg_panel_frame"
                 android:clipToOutline="true"
-                android:elevation="2dp"
-                android:minHeight="80dp">
-
-                <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:alpha="0.26"
-                    android:contentDescription="@null"
-                    android:importantForAccessibility="no"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/deco_song_header_mountains" />
+                android:elevation="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
-
-                    <Button
-                        android:id="@+id/songBackButton"
-                        android:layout_width="72dp"
-                        android:layout_height="48dp"
-                        android:background="@drawable/bg_button_art_overlay"
-                        android:text="返回"
-                        android:textAllCaps="false"
-                        android:textColor="@color/accent_dark"
-                        android:textSize="14sp" />
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingLeft="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingRight="16dp"
+                    android:paddingBottom="8dp">
 
                     <TextView
                         android:id="@+id/songTitleText"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="12dp"
-                        android:layout_weight="1"
                         android:fontFamily="serif"
+                        android:gravity="center"
                         android:text="曲目练习"
                         android:textColor="@color/accent_dark"
                         android:textSize="24sp"
@@ -602,21 +591,22 @@
                 android:id="@+id/songMetaText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="8dp"
                 android:background="@drawable/bg_summary_strip_art"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="F调 · 4/4 · 90 BPM"
                 android:textColor="@color/accent_dark"
                 android:textSize="13sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:visibility="gone" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_panel_bamboo"
-                android:elevation="2dp"
+                android:elevation="0dp"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -645,16 +635,16 @@
                 <Spinner
                     android:id="@+id/songSpinner"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="12dp"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="8dp"
                     android:background="@drawable/bg_spinner_field" />
             </LinearLayout>
 
             <Button
                 android:id="@+id/songPlayButton"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="16dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_button_primary"
                 android:text="播放伴奏"
                 android:textAllCaps="false"
@@ -665,7 +655,7 @@
                 android:id="@+id/songStatusText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/bg_summary_strip_art"
                 android:lineSpacingExtra="3dp"
                 android:text="智能伴奏会按谱面节奏播放，当前音符会同步高亮。"
@@ -675,9 +665,9 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_panel_tuner"
-                android:elevation="2dp"
+                android:elevation="0dp"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -706,17 +696,17 @@
                 <com.dongxiao.practice.ui.DynamicScoreView
                     android:id="@+id/dynamicScoreView"
                     android:layout_width="match_parent"
-                    android:layout_height="360dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_height="320dp"
+                    android:layout_marginTop="6dp"
                     android:background="@drawable/bg_score_surface" />
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_panel_wave"
-                android:elevation="2dp"
+                android:elevation="0dp"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -745,14 +735,14 @@
                 <Spinner
                     android:id="@+id/imageScoreSpinner"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="12dp"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="8dp"
                     android:background="@drawable/bg_spinner_field" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="6dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -793,14 +783,31 @@
                     android:id="@+id/imageScoreView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="8dp"
                     android:adjustViewBounds="true"
                     android:background="@drawable/bg_score_surface"
                     android:contentDescription="本地图片谱"
-                    android:maxHeight="620dp"
+                    android:maxHeight="560dp"
                     android:scaleType="fitCenter" />
             </LinearLayout>
 
-        </LinearLayout>
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/songBackButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="top|left"
+                android:layout_marginLeft="8dp"
+                android:layout_marginTop="8dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="返回首页"
+                android:importantForAccessibility="yes"
+                android:padding="10dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_back_chevron"
+                android:stateListAnimator="@null"
+                android:tint="@color/accent_dark" />
+        </FrameLayout>
     </LinearLayout>
 </ScrollView>

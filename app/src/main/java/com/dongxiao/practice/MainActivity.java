@@ -7,7 +7,9 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -22,6 +24,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -65,6 +68,7 @@ import java.util.Locale;
 
 public final class MainActivity extends Activity {
     private static final int REQUEST_RECORD_AUDIO = 1001;
+    private static final float PRACTICE_HOME_CARD_HEIGHT_RATIO = 0.72f;
 
     private TextView statusText;
     private TextView instructionText;
@@ -79,8 +83,8 @@ public final class MainActivity extends Activity {
     private TextView songStatusText;
     private TextView imageScorePageText;
     private LinearLayout homeContainer;
-    private LinearLayout practiceContainer;
-    private LinearLayout songContainer;
+    private FrameLayout practiceContainer;
+    private FrameLayout songContainer;
     private LinearLayout modeList;
     private LinearLayout scorePanel;
     private Spinner tuningSpinner;
@@ -89,9 +93,9 @@ public final class MainActivity extends Activity {
     private Spinner songSpinner;
     private Spinner imageScoreSpinner;
     private CheckBox autoTargetCheck;
-    private Button backButton;
+    private ImageButton backButton;
     private Button startButton;
-    private Button songBackButton;
+    private ImageButton songBackButton;
     private Button songPlayButton;
     private Button imageScorePrevButton;
     private Button imageScoreNextButton;
@@ -263,8 +267,32 @@ public final class MainActivity extends Activity {
 
     private void setupPracticeModes() {
         modeList.removeAllViews();
-        for (PracticeMode mode : PracticeMode.values()) {
-            modeList.addView(createPracticeCard(mode));
+        PracticeMode[] modes = PracticeMode.values();
+        for (int index = 0; index < modes.length; index += 2) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setBaselineAligned(false);
+
+            LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            rowParams.bottomMargin = dp(12);
+
+            for (int column = 0; column < 2 && index + column < modes.length; column++) {
+                LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1.0f
+                );
+                if (column == 0) {
+                    cardParams.rightMargin = dp(6);
+                } else {
+                    cardParams.leftMargin = dp(6);
+                }
+                row.addView(createPracticeCard(modes[index + column]), cardParams);
+            }
+            modeList.addView(row, rowParams);
         }
         modeList.addView(createSongPracticeCard());
         backButton.setOnClickListener(view -> showHome());
@@ -276,7 +304,8 @@ public final class MainActivity extends Activity {
                 mode.instruction,
                 "练",
                 getPracticeDecorationRes(mode),
-                view -> enterPractice(mode)
+                view -> enterPractice(mode),
+                false
         );
     }
 
@@ -286,7 +315,8 @@ public final class MainActivity extends Activity {
                 "选择本地图片谱，播放智能伴奏，并在原图上跟随高亮练习。",
                 "曲",
                 R.drawable.deco_home_card_song,
-                view -> enterSongPractice()
+                view -> enterSongPractice(),
+                true
         );
     }
 
@@ -295,10 +325,11 @@ public final class MainActivity extends Activity {
             String descriptionText,
             String sealText,
             int decorationResId,
-            View.OnClickListener listener
+            View.OnClickListener listener,
+            boolean isSongCard
     ) {
-        FrameLayout card = new FrameLayout(this);
-        card.setMinimumHeight(dp(108));
+        FrameLayout card = isSongCard ? new FrameLayout(this) : new RatioHomeCard(this);
+        card.setMinimumHeight(dp(isSongCard ? 192 : 108));
         card.setBackgroundResource(R.drawable.bg_practice_card);
         card.setClickable(true);
         card.setFocusable(true);
@@ -308,23 +339,94 @@ public final class MainActivity extends Activity {
             card.setClipToOutline(true);
         }
 
-        ImageView cardDecoration = createHomeCardDecoration(decorationResId, "曲".equals(sealText));
+        ImageView cardDecoration = createHomeCardDecoration(decorationResId, isSongCard);
         FrameLayout.LayoutParams decorationParams = new FrameLayout.LayoutParams(
-                dp("曲".equals(sealText) ? 156 : 148),
-                dp("曲".equals(sealText) ? 120 : 128),
-                Gravity.RIGHT | Gravity.CENTER_VERTICAL
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
         );
-        decorationParams.rightMargin = dp(0);
         card.addView(cardDecoration, decorationParams);
 
+        View scrim = new View(this);
+        scrim.setBackgroundColor(Color.argb(isSongCard ? 70 : 58, 255, 253, 246));
+        card.addView(scrim, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+
+        if (isSongCard) {
+            addSongHomeCardContent(card, titleText, descriptionText, sealText);
+        } else {
+            addPracticeHomeCardContent(card, titleText, sealText);
+        }
+
+        if (isSongCard) {
+            LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dp(192)
+            );
+            cardParams.topMargin = dp(2);
+            card.setLayoutParams(cardParams);
+        }
+        card.setOnClickListener(listener);
+        return card;
+    }
+
+    private void addPracticeHomeCardContent(
+            FrameLayout card,
+            String titleText,
+            String sealText
+    ) {
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setGravity(Gravity.BOTTOM);
+        content.setPadding(dp(10), dp(10), dp(10), dp(10));
+
+        LinearLayout topRow = new LinearLayout(this);
+        topRow.setOrientation(LinearLayout.HORIZONTAL);
+        topRow.setGravity(Gravity.CENTER_VERTICAL);
+
+        View seal = createHomeBadge(sealText);
+        LinearLayout.LayoutParams sealParams = new LinearLayout.LayoutParams(dp(36), dp(36));
+        sealParams.rightMargin = dp(8);
+        topRow.addView(seal, sealParams);
+
+        TextView title = new TextView(this);
+        title.setText(titleText);
+        title.setTextColor(getColorCompat(R.color.ink));
+        title.setTextSize(16.5f);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
+        topRow.addView(title, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1.0f
+        ));
+
+        content.addView(topRow, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        card.addView(content, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+    }
+
+    private void addSongHomeCardContent(
+            FrameLayout card,
+            String titleText,
+            String descriptionText,
+            String sealText
+    ) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(18), dp(16), dp(18), dp(16));
+        row.setPadding(dp(16), dp(10), dp(16), dp(10));
 
         View seal = createHomeBadge(sealText);
-        int badgeSize = "练".equals(sealText) ? dp(52) : dp(44);
-        LinearLayout.LayoutParams sealParams = new LinearLayout.LayoutParams(badgeSize, badgeSize);
+        LinearLayout.LayoutParams sealParams = new LinearLayout.LayoutParams(dp(46), dp(46));
         sealParams.rightMargin = dp(16);
         row.addView(seal, sealParams);
 
@@ -349,7 +451,7 @@ public final class MainActivity extends Activity {
         description.setTextColor(getColorCompat(R.color.muted));
         description.setTextSize(13.0f);
         description.setLineSpacing(dp(2), 1.0f);
-        description.setMaxLines(2);
+        description.setMaxLines(1);
         description.setEllipsize(TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams descriptionParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -364,37 +466,11 @@ public final class MainActivity extends Activity {
                 1.0f
         ));
 
-        TextView action = new TextView(this);
-        action.setText("进入");
-        action.setGravity(Gravity.CENTER);
-        action.setMinWidth(dp(56));
-        action.setMinHeight(dp(36));
-        action.setPadding(dp(12), dp(8), dp(12), dp(8));
-        action.setBackgroundResource(R.drawable.bg_action_chip);
-        action.setTextColor(getColorCompat(R.color.cinnabar_dark));
-        action.setTextSize(13.0f);
-        action.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        LinearLayout.LayoutParams actionParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        actionParams.leftMargin = dp(12);
-        row.addView(action, actionParams);
-
         card.addView(row, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.CENTER_VERTICAL
         ));
-
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        cardParams.bottomMargin = dp(12);
-        card.setLayoutParams(cardParams);
-        card.setOnClickListener(listener);
-        return card;
     }
 
     private int getPracticeDecorationRes(PracticeMode mode) {
@@ -417,12 +493,34 @@ public final class MainActivity extends Activity {
     }
 
     private ImageView createHomeCardDecoration(int decorationResId, boolean isSongCard) {
-        ImageView decoration = new ImageView(this);
+        ImageView decoration = new FocusCropImageView(this);
         decoration.setImageResource(decorationResId);
-        decoration.setAlpha(isSongCard ? 0.26f : 0.24f);
+        decoration.setAlpha(isSongCard ? 0.46f : 0.52f);
         decoration.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        decoration.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        ((FocusCropImageView) decoration).setCropFocus(0.5f, getHomeCardCropFocusY(decorationResId));
         return decoration;
+    }
+
+    private float getHomeCardCropFocusY(int decorationResId) {
+        if (decorationResId == R.drawable.deco_home_card_song) {
+            return 0.43f;
+        }
+        if (decorationResId == R.drawable.deco_card_long_tone) {
+            return 0.34f;
+        }
+        if (decorationResId == R.drawable.deco_card_tonguing) {
+            return 0.28f;
+        }
+        if (decorationResId == R.drawable.deco_card_vibrato) {
+            return 0.58f;
+        }
+        if (decorationResId == R.drawable.deco_card_slide) {
+            return 0.72f;
+        }
+        if (decorationResId == R.drawable.deco_card_ornament) {
+            return 0.31f;
+        }
+        return 0.5f;
     }
 
     private View createHomeBadge(String sealText) {
@@ -817,8 +915,8 @@ public final class MainActivity extends Activity {
         view.setTextSize(14.0f);
         view.setSingleLine(true);
         view.setEllipsize(TextUtils.TruncateAt.END);
-        view.setPadding(dp(12), 0, dp(12), 0);
-        view.setMinHeight(dp(48));
+        view.setPadding(dp(8), 0, dp(22), 0);
+        view.setMinHeight(dp(44));
     }
 
     private ArrayAdapter<TargetNote> createTargetAdapter(List<TargetNote> items) {
@@ -1515,5 +1613,92 @@ public final class MainActivity extends Activity {
     private ImageScore selectedImageScore() {
         Object item = imageScoreSpinner.getSelectedItem();
         return item instanceof ImageScore ? (ImageScore) item : null;
+    }
+
+    private static final class RatioHomeCard extends FrameLayout {
+        RatioHomeCard(Activity context) {
+            super(context);
+        }
+
+        @Override
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            int width = View.MeasureSpec.getSize(widthMeasureSpec);
+            if (width <= 0) {
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                return;
+            }
+            int height = Math.max(getSuggestedMinimumHeight(), Math.round(width * PRACTICE_HOME_CARD_HEIGHT_RATIO));
+            int compactHeightSpec = View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY);
+            super.onMeasure(widthMeasureSpec, compactHeightSpec);
+            setMeasuredDimension(width, height);
+        }
+    }
+
+    private static final class FocusCropImageView extends ImageView {
+        private final Matrix cropMatrix = new Matrix();
+        private float cropFocusX = 0.5f;
+        private float cropFocusY = 0.5f;
+
+        FocusCropImageView(Activity context) {
+            super(context);
+            super.setScaleType(ScaleType.MATRIX);
+        }
+
+        void setCropFocus(float focusX, float focusY) {
+            cropFocusX = clampFocus(focusX);
+            cropFocusY = clampFocus(focusY);
+            updateCropMatrix();
+        }
+
+        @Override
+        public void setImageDrawable(Drawable drawable) {
+            super.setImageDrawable(drawable);
+            updateCropMatrix();
+        }
+
+        @Override
+        public void setScaleType(ScaleType scaleType) {
+            super.setScaleType(ScaleType.MATRIX);
+            updateCropMatrix();
+        }
+
+        @Override
+        protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
+            super.onSizeChanged(width, height, oldWidth, oldHeight);
+            updateCropMatrix();
+        }
+
+        private void updateCropMatrix() {
+            Drawable drawable = getDrawable();
+            int viewWidth = getWidth() - getPaddingLeft() - getPaddingRight();
+            int viewHeight = getHeight() - getPaddingTop() - getPaddingBottom();
+            if (drawable == null || viewWidth <= 0 || viewHeight <= 0) {
+                return;
+            }
+
+            int drawableWidth = drawable.getIntrinsicWidth();
+            int drawableHeight = drawable.getIntrinsicHeight();
+            if (drawableWidth <= 0 || drawableHeight <= 0) {
+                return;
+            }
+
+            float scale = Math.max(
+                    (float) viewWidth / (float) drawableWidth,
+                    (float) viewHeight / (float) drawableHeight
+            );
+            float scaledWidth = drawableWidth * scale;
+            float scaledHeight = drawableHeight * scale;
+            float dx = getPaddingLeft() - Math.max(0.0f, scaledWidth - viewWidth) * cropFocusX;
+            float dy = getPaddingTop() - Math.max(0.0f, scaledHeight - viewHeight) * cropFocusY;
+
+            cropMatrix.reset();
+            cropMatrix.setScale(scale, scale);
+            cropMatrix.postTranslate(Math.round(dx), Math.round(dy));
+            super.setImageMatrix(cropMatrix);
+        }
+
+        private static float clampFocus(float value) {
+            return Math.max(0.0f, Math.min(1.0f, value));
+        }
     }
 }
