@@ -22,12 +22,13 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_header">
+                android:background="@drawable/bg_header"
+                android:clipToOutline="true">
 
                 <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:alpha="0.2"
+                    android:alpha="0.3"
                     android:contentDescription="@null"
                     android:importantForAccessibility="no"
                     android:scaleType="centerCrop"
@@ -36,7 +37,8 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:padding="24dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -54,15 +56,16 @@
                             android:textSize="32sp"
                             android:textStyle="bold" />
 
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
+                        <TextView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
                             android:background="@drawable/bg_seal"
-                            android:contentDescription="@null"
-                            android:importantForAccessibility="no"
-                            android:padding="4dp"
-                            android:scaleType="centerCrop"
-                            android:src="@drawable/home_badge_xiao_met" />
+                            android:fontFamily="serif"
+                            android:gravity="center"
+                            android:text="箫"
+                            android:textColor="#FFF8F0"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
 
                     <TextView
@@ -152,45 +155,54 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <LinearLayout
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_panel"
+                android:background="@drawable/bg_panel_frame"
+                android:clipToOutline="true"
                 android:elevation="2dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/backButton"
-                    android:layout_width="72dp"
-                    android:layout_height="48dp"
-                    android:background="@drawable/bg_button_secondary"
-                    android:text="返回"
-                    android:textAllCaps="false"
-                    android:textColor="@color/ink"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/modeTitleText"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="12dp"
-                    android:layout_weight="1"
-                    android:fontFamily="serif"
-                    android:text="长音"
-                    android:textColor="@color/ink"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
+                android:minHeight="80dp">
 
                 <ImageView
-                    android:layout_width="64dp"
-                    android:layout_height="48dp"
-                    android:alpha="0.32"
+                    android:id="@+id/practiceHeaderImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.24"
                     android:contentDescription="@null"
                     android:importantForAccessibility="no"
                     android:scaleType="centerCrop"
                     android:src="@drawable/deco_practice_header_xiao" />
-            </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="16dp">
+
+                    <Button
+                        android:id="@+id/backButton"
+                        android:layout_width="72dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_button_secondary"
+                        android:text="返回"
+                        android:textAllCaps="false"
+                        android:textColor="@color/ink"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/modeTitleText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:layout_weight="1"
+                        android:fontFamily="serif"
+                        android:text="长音"
+                        android:textColor="@color/ink"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/practiceSummaryText"
@@ -542,45 +554,53 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <LinearLayout
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_panel"
+                android:background="@drawable/bg_panel_frame"
+                android:clipToOutline="true"
                 android:elevation="2dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/songBackButton"
-                    android:layout_width="72dp"
-                    android:layout_height="48dp"
-                    android:background="@drawable/bg_button_secondary"
-                    android:text="返回"
-                    android:textAllCaps="false"
-                    android:textColor="@color/ink"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/songTitleText"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="12dp"
-                    android:layout_weight="1"
-                    android:fontFamily="serif"
-                    android:text="曲目练习"
-                    android:textColor="@color/ink"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
+                android:minHeight="80dp">
 
                 <ImageView
-                    android:layout_width="78dp"
-                    android:layout_height="48dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:alpha="0.26"
                     android:contentDescription="@null"
                     android:importantForAccessibility="no"
                     android:scaleType="centerCrop"
                     android:src="@drawable/deco_song_header_mountains" />
-            </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="16dp">
+
+                    <Button
+                        android:id="@+id/songBackButton"
+                        android:layout_width="72dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_button_secondary"
+                        android:text="返回"
+                        android:textAllCaps="false"
+                        android:textColor="@color/ink"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/songTitleText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:layout_weight="1"
+                        android:fontFamily="serif"
+                        android:text="曲目练习"
+                        android:textColor="@color/ink"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/songMetaText"

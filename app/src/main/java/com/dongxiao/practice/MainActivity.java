@@ -96,6 +96,7 @@ public final class MainActivity extends Activity {
     private Button imageScoreNextButton;
     private Button scoreDetailButton;
     private ImageView imageScoreView;
+    private ImageView practiceHeaderImage;
     private TunerView tunerView;
     private WaveformView waveformView;
     private DynamicScoreView dynamicScoreView;
@@ -162,6 +163,7 @@ public final class MainActivity extends Activity {
         songMetaText = findViewById(R.id.songMetaText);
         songStatusText = findViewById(R.id.songStatusText);
         imageScorePageText = findViewById(R.id.imageScorePageText);
+        practiceHeaderImage = findViewById(R.id.practiceHeaderImage);
         homeContainer = findViewById(R.id.homeContainer);
         practiceContainer = findViewById(R.id.practiceContainer);
         songContainer = findViewById(R.id.songContainer);
@@ -272,6 +274,7 @@ public final class MainActivity extends Activity {
                 mode.label,
                 mode.instruction,
                 "练",
+                getPracticeDecorationRes(mode),
                 view -> enterPractice(mode)
         );
     }
@@ -281,6 +284,7 @@ public final class MainActivity extends Activity {
                 "曲目练习",
                 "选择本地图片谱，播放智能伴奏，并在原图上跟随高亮练习。",
                 "曲",
+                R.drawable.deco_home_card_song,
                 view -> enterSongPractice()
         );
     }
@@ -289,6 +293,7 @@ public final class MainActivity extends Activity {
             String titleText,
             String descriptionText,
             String sealText,
+            int decorationResId,
             View.OnClickListener listener
     ) {
         FrameLayout card = new FrameLayout(this);
@@ -299,15 +304,16 @@ public final class MainActivity extends Activity {
         card.setContentDescription(titleText + "。" + descriptionText);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             card.setElevation(dp(3));
+            card.setClipToOutline(true);
         }
 
-        ImageView cardDecoration = createHomeCardDecoration(sealText);
+        ImageView cardDecoration = createHomeCardDecoration(decorationResId, "曲".equals(sealText));
         FrameLayout.LayoutParams decorationParams = new FrameLayout.LayoutParams(
-                dp("曲".equals(sealText) ? 142 : 126),
-                dp("曲".equals(sealText) ? 112 : 124),
+                dp("曲".equals(sealText) ? 156 : 148),
+                dp("曲".equals(sealText) ? 120 : 128),
                 Gravity.RIGHT | Gravity.CENTER_VERTICAL
         );
-        decorationParams.rightMargin = dp(4);
+        decorationParams.rightMargin = dp(0);
         card.addView(cardDecoration, decorationParams);
 
         LinearLayout row = new LinearLayout(this);
@@ -390,29 +396,35 @@ public final class MainActivity extends Activity {
         return card;
     }
 
-    private ImageView createHomeCardDecoration(String sealText) {
+    private int getPracticeDecorationRes(PracticeMode mode) {
+        switch (mode) {
+            case LONG_TONE:
+                return R.drawable.deco_card_long_tone;
+            case SCALE:
+                return R.drawable.deco_card_scale;
+            case TONGUING:
+                return R.drawable.deco_card_tonguing;
+            case VIBRATO:
+                return R.drawable.deco_card_vibrato;
+            case SLIDE:
+                return R.drawable.deco_card_slide;
+            case ORNAMENT:
+                return R.drawable.deco_card_ornament;
+            default:
+                return R.drawable.deco_card_scale;
+        }
+    }
+
+    private ImageView createHomeCardDecoration(int decorationResId, boolean isSongCard) {
         ImageView decoration = new ImageView(this);
-        decoration.setImageResource("曲".equals(sealText)
-                ? R.drawable.deco_home_card_song
-                : R.drawable.deco_home_card_xiao);
-        decoration.setAlpha("曲".equals(sealText) ? 0.16f : 0.13f);
+        decoration.setImageResource(decorationResId);
+        decoration.setAlpha(isSongCard ? 0.26f : 0.24f);
         decoration.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         decoration.setScaleType(ImageView.ScaleType.CENTER_CROP);
         return decoration;
     }
 
     private View createHomeBadge(String sealText) {
-        if ("练".equals(sealText)) {
-            ImageView imageBadge = new ImageView(this);
-            imageBadge.setBackgroundResource(R.drawable.bg_home_badge);
-            imageBadge.setImageResource(R.drawable.home_badge_practice_xiao_line);
-            imageBadge.setColorFilter(getColorCompat(R.color.paper));
-            imageBadge.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-            imageBadge.setPadding(dp(7), dp(7), dp(7), dp(7));
-            imageBadge.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            return imageBadge;
-        }
-
         TextView textBadge = new TextView(this);
         textBadge.setText(sealText);
         textBadge.setGravity(Gravity.CENTER);
@@ -908,6 +920,9 @@ public final class MainActivity extends Activity {
         PracticeMode mode = selectedPracticeMode();
         if (mode != null && modeTitleText != null) {
             modeTitleText.setText(mode.label);
+        }
+        if (mode != null && practiceHeaderImage != null) {
+            practiceHeaderImage.setImageResource(getPracticeDecorationRes(mode));
         }
         if (mode != null && instructionText != null) {
             instructionText.setText(mode.instruction);
