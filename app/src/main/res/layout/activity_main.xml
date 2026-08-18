@@ -499,6 +499,17 @@
                     android:lineSpacingExtra="4dp"
                     android:textColor="@color/ink"
                     android:textSize="15sp" />
+
+                <Button
+                    android:id="@+id/scoreDetailButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_button_primary"
+                    android:text="查看评分报告"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp" />
             </LinearLayout>
         </LinearLayout>
 

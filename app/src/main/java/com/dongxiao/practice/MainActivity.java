@@ -2,10 +2,13 @@ package com.dongxiao.practice;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
@@ -13,12 +16,14 @@ import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -88,6 +93,7 @@ public final class MainActivity extends Activity {
     private Button songPlayButton;
     private Button imageScorePrevButton;
     private Button imageScoreNextButton;
+    private Button scoreDetailButton;
     private ImageView imageScoreView;
     private TunerView tunerView;
     private WaveformView waveformView;
@@ -103,6 +109,7 @@ public final class MainActivity extends Activity {
     private ArrayAdapter<PracticeSong> songAdapter;
     private ArrayAdapter<ImageScore> imageScoreAdapter;
     private PracticeMode currentPracticeMode;
+    private PracticeScore latestPracticeScore;
     private boolean sessionHasFrames = false;
     private int imageScorePageIndex = 0;
 
@@ -116,6 +123,7 @@ public final class MainActivity extends Activity {
         setupSpinners();
         setupPracticeModes();
         setupStartButton();
+        setupScoreReport();
         setupSongPractice();
         showHome();
     }
@@ -123,7 +131,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        stopListening();
+        stopListening(false);
         stopSongPlayback(true);
     }
 
@@ -170,6 +178,7 @@ public final class MainActivity extends Activity {
         songPlayButton = findViewById(R.id.songPlayButton);
         imageScorePrevButton = findViewById(R.id.imageScorePrevButton);
         imageScoreNextButton = findViewById(R.id.imageScoreNextButton);
+        scoreDetailButton = findViewById(R.id.scoreDetailButton);
         imageScoreView = findViewById(R.id.imageScoreView);
         tunerView = findViewById(R.id.tunerView);
         waveformView = findViewById(R.id.waveformView);
@@ -378,6 +387,21 @@ public final class MainActivity extends Activity {
         });
     }
 
+    private void setupScoreReport() {
+        scorePanel.setClickable(true);
+        scorePanel.setFocusable(true);
+        scorePanel.setOnClickListener(view -> {
+            if (latestPracticeScore != null) {
+                showPracticeScoreDialog(latestPracticeScore);
+            }
+        });
+        scoreDetailButton.setOnClickListener(view -> {
+            if (latestPracticeScore != null) {
+                showPracticeScoreDialog(latestPracticeScore);
+            }
+        });
+    }
+
     private void setupSongPractice() {
         songPlayer = new SongPlayer(new SongPlayer.Listener() {
             @Override
@@ -467,6 +491,7 @@ public final class MainActivity extends Activity {
         metricText.setText("练习指标等待开始。");
         scorePanel.setVisibility(View.GONE);
         scoreText.setText("");
+        latestPracticeScore = null;
         updatePracticeSummary();
         resetScrollToTop();
         waveformView.clear();
@@ -856,6 +881,7 @@ public final class MainActivity extends Activity {
         practiceAnalyzer.reset();
         sessionScorer.reset();
         sessionHasFrames = false;
+        latestPracticeScore = null;
         scorePanel.setVisibility(View.GONE);
         scoreText.setText("");
         resetScrollToTop();
@@ -886,6 +912,10 @@ public final class MainActivity extends Activity {
     }
 
     private void stopListening() {
+        stopListening(true);
+    }
+
+    private void stopListening(boolean showReportDialog) {
         boolean shouldScore = audioAnalyzer != null && currentPracticeMode != null && sessionHasFrames;
         if (audioAnalyzer != null) {
             audioAnalyzer.stop();
@@ -894,9 +924,13 @@ public final class MainActivity extends Activity {
         startButton.setText("开始拾音");
         if (shouldScore) {
             PracticeScore score = sessionScorer.finish(currentPracticeMode);
-            scoreText.setText(formatPracticeScore(score));
+            latestPracticeScore = score;
+            scoreText.setText(formatScorePanelSummary(score));
             scorePanel.setVisibility(View.VISIBLE);
-            statusText.setText("本次练习已结束，评分已生成。");
+            statusText.setText("本次练习已结束，评分报告已生成。");
+            if (showReportDialog) {
+                showPracticeScoreDialog(score);
+            }
         } else {
             statusText.setText("拾音已停止。");
         }
@@ -983,33 +1017,308 @@ public final class MainActivity extends Activity {
         return Math.max(0.0, Math.min(100.0, rms * 100.0));
     }
 
-    private CharSequence formatPracticeScore(PracticeScore score) {
-        SpannableStringBuilder builder = new SpannableStringBuilder(score.format());
-        if (!score.noteScores.isEmpty()) {
-            builder.append("\n\n逐音分析");
-            for (PracticeNoteScore noteScore : score.noteScores) {
-                builder.append("\n\n");
-                JianpuNoteSpan.appendTo(builder, new TargetNote(
-                        String.valueOf(noteScore.scaleDegree),
-                        noteScore.scaleDegree,
-                        noteScore.midi,
-                        noteScore.register
-                ));
-                builder.append(String.format(
+    private String formatScorePanelSummary(PracticeScore score) {
+        return String.format(
+                Locale.CHINA,
+                "综合评分 %d 分 · 有效 %.1f 秒\n逐音分析 %d 项，点击查看完整报告。",
+                score.score,
+                score.voicedSeconds,
+                score.noteScores.size()
+        );
+    }
+
+    private void showPracticeScoreDialog(PracticeScore score) {
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int dialogHeight = Math.max(dp(300), Math.min(screenHeight - dp(64), dp(720)));
+
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundResource(R.drawable.bg_score_dialog);
+        root.setPadding(dp(18), dp(18), dp(18), dp(18));
+        root.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dialogHeight
+        ));
+
+        root.addView(createScoreDialogHeader(score));
+
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setFillViewport(false);
+        scrollView.setClipToPadding(false);
+
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(0, dp(16), 0, dp(8));
+        addScoreMetricGrid(body, score);
+        addScoreCommentCard(body, score);
+        addNoteScoreCards(body, score);
+        scrollView.addView(body, new ScrollView.LayoutParams(
+                ScrollView.LayoutParams.MATCH_PARENT,
+                ScrollView.LayoutParams.WRAP_CONTENT
+        ));
+
+        root.addView(scrollView, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1.0f
+        ));
+
+        Button closeButton = new Button(this);
+        closeButton.setText("关闭报告");
+        closeButton.setAllCaps(false);
+        closeButton.setTextColor(Color.WHITE);
+        closeButton.setTextSize(15.0f);
+        closeButton.setBackgroundResource(R.drawable.bg_button_primary);
+        closeButton.setOnClickListener(view -> dialog.dismiss());
+        root.addView(closeButton, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(52)
+        ));
+
+        dialog.setContentView(root);
+        dialog.setCanceledOnTouchOutside(true);
+        dialog.show();
+
+        Window window = dialog.getWindow();
+        if (window != null) {
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setLayout(
+                    Math.min(screenWidth - dp(24), dp(620)),
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+        }
+    }
+
+    private View createScoreDialogHeader(PracticeScore score) {
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+
+        LinearLayout textColumn = new LinearLayout(this);
+        textColumn.setOrientation(LinearLayout.VERTICAL);
+
+        TextView title = createText("练习评分报告", 20.0f, R.color.ink, true);
+        title.setTypeface(Typeface.create(Typeface.SERIF, Typeface.BOLD));
+        textColumn.addView(title);
+
+        TextView subtitle = createText(
+                score.noteScores.isEmpty() ? "综合表现" : "综合表现 · 逐音建议",
+                13.0f,
+                R.color.muted,
+                false
+        );
+        LinearLayout.LayoutParams subtitleParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        subtitleParams.topMargin = dp(4);
+        textColumn.addView(subtitle, subtitleParams);
+
+        header.addView(textColumn, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1.0f
+        ));
+
+        LinearLayout scoreBox = new LinearLayout(this);
+        scoreBox.setOrientation(LinearLayout.VERTICAL);
+        scoreBox.setGravity(Gravity.CENTER);
+        scoreBox.setBackgroundResource(R.drawable.bg_score_metric);
+        scoreBox.setMinimumWidth(dp(88));
+
+        TextView scoreValue = createText(String.valueOf(score.score), 32.0f, R.color.cinnabar, true);
+        scoreValue.setGravity(Gravity.CENTER);
+        TextView scoreLabel = createText("综合分", 12.0f, R.color.muted, false);
+        scoreLabel.setGravity(Gravity.CENTER);
+        scoreBox.addView(scoreValue);
+        scoreBox.addView(scoreLabel);
+
+        LinearLayout.LayoutParams scoreParams = new LinearLayout.LayoutParams(dp(92), dp(76));
+        scoreParams.leftMargin = dp(12);
+        header.addView(scoreBox, scoreParams);
+        return header;
+    }
+
+    private void addScoreMetricGrid(LinearLayout body, PracticeScore score) {
+        LinearLayout firstRow = createHorizontalRow();
+        addMetricTile(firstRow, "有效发声", String.format(Locale.CHINA, "%.1f 秒", score.voicedSeconds));
+        addMetricTile(firstRow, "平均偏差", MusicTheory.formatCents(score.meanAbsCents));
+        body.addView(firstRow);
+
+        LinearLayout secondRow = createHorizontalRow();
+        LinearLayout.LayoutParams secondRowParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        secondRowParams.topMargin = dp(8);
+        addMetricTile(secondRow, "稳定度", String.format(
+                Locale.CHINA,
+                "%.0f%%",
+                PracticeStats.stabilityPercent(score.stabilityCents)
+        ));
+        addMetricTile(secondRow, "命中率", String.format(Locale.CHINA, "%.0f%%", score.hitRate));
+        body.addView(secondRow, secondRowParams);
+    }
+
+    private void addScoreCommentCard(LinearLayout body, PracticeScore score) {
+        LinearLayout card = createDialogCard(R.drawable.bg_score_metric);
+        TextView title = createText("总评", 15.0f, R.color.ink, true);
+        TextView comment = createText(score.comment, 14.0f, R.color.ink, false);
+        comment.setLineSpacing(dp(2), 1.0f);
+        TextView detail = createText(score.modeDetail, 13.0f, R.color.muted, false);
+        detail.setLineSpacing(dp(2), 1.0f);
+
+        card.addView(title);
+        card.addView(comment, topMarginParams(6));
+        if (!TextUtils.isEmpty(score.modeDetail)) {
+            card.addView(detail, topMarginParams(6));
+        }
+        body.addView(card, topMarginParams(12));
+    }
+
+    private void addNoteScoreCards(LinearLayout body, PracticeScore score) {
+        TextView sectionTitle = createText(
+                score.noteScores.isEmpty() ? "逐音分析" : "逐音分析（" + score.noteScores.size() + "项）",
+                16.0f,
+                R.color.ink,
+                true
+        );
+        body.addView(sectionTitle, topMarginParams(16));
+
+        if (score.noteScores.isEmpty()) {
+            TextView emptyText = createText("本次有效声音不足，暂无逐音建议。", 13.0f, R.color.muted, false);
+            body.addView(emptyText, topMarginParams(8));
+            return;
+        }
+
+        for (PracticeNoteScore noteScore : score.noteScores) {
+            body.addView(createNoteScoreCard(noteScore), topMarginParams(10));
+        }
+    }
+
+    private View createNoteScoreCard(PracticeNoteScore noteScore) {
+        LinearLayout card = createDialogCard(R.drawable.bg_note_score_card);
+
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+
+        SpannableStringBuilder noteLabel = new SpannableStringBuilder();
+        JianpuNoteSpan.appendTo(noteLabel, new TargetNote(
+                String.valueOf(noteScore.scaleDegree),
+                noteScore.scaleDegree,
+                noteScore.midi,
+                noteScore.register
+        ));
+        noteLabel.append("  ").append(String.valueOf(noteScore.score)).append(" 分");
+
+        TextView noteTitle = createText("", 17.0f, R.color.ink, true);
+        noteTitle.setText(noteLabel);
+        titleRow.addView(noteTitle, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1.0f
+        ));
+
+        TextView noteMeta = createText(
+                String.format(
                         Locale.CHINA,
-                        "：%d 分 · %.1f 秒 · 平均%s · 稳定度%.0f%% · 命中率%.0f%%\n优点：%s\n不足：%s\n建议：%s",
-                        noteScore.score,
+                        "%.1f秒 · %s · 稳定%.0f%% · 命中%.0f%%",
                         noteScore.voicedSeconds,
                         MusicTheory.formatCents(noteScore.meanCents),
                         PracticeStats.stabilityPercent(noteScore.stabilityCents),
-                        noteScore.hitRate,
-                        noteScore.strengths,
-                        noteScore.weaknesses,
-                        noteScore.suggestions
-                ));
-            }
+                        noteScore.hitRate
+                ),
+                12.0f,
+                R.color.muted,
+                false
+        );
+        noteMeta.setGravity(Gravity.RIGHT);
+        titleRow.addView(noteMeta, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1.25f
+        ));
+        card.addView(titleRow);
+
+        addAssessmentLine(card, "优点", noteScore.strengths, R.color.accent);
+        addAssessmentLine(card, "不足", noteScore.weaknesses, R.color.warning);
+        addAssessmentLine(card, "建议", noteScore.suggestions, R.color.cinnabar);
+        return card;
+    }
+
+    private void addAssessmentLine(LinearLayout card, String label, String text, int labelColor) {
+        TextView line = createText(label + "：" + text, 13.0f, R.color.ink, false);
+        line.setLineSpacing(dp(2), 1.0f);
+        line.setTextColor(getColorCompat(labelColor));
+        card.addView(line, topMarginParams(8));
+    }
+
+    private LinearLayout createHorizontalRow() {
+        LinearLayout row = new LinearLayout(this);
+        row.setBaselineAligned(false);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        return row;
+    }
+
+    private void addMetricTile(LinearLayout row, String label, String value) {
+        LinearLayout tile = new LinearLayout(this);
+        tile.setOrientation(LinearLayout.VERTICAL);
+        tile.setBackgroundResource(R.drawable.bg_score_metric);
+        tile.setPadding(dp(10), dp(10), dp(10), dp(10));
+
+        TextView valueView = createText(value, 17.0f, R.color.ink, true);
+        TextView labelView = createText(label, 12.0f, R.color.muted, false);
+        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        labelParams.topMargin = dp(2);
+        tile.addView(valueView);
+        tile.addView(labelView, labelParams);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1.0f
+        );
+        if (row.getChildCount() > 0) {
+            params.leftMargin = dp(8);
         }
-        return builder;
+        row.addView(tile, params);
+    }
+
+    private LinearLayout createDialogCard(int backgroundResId) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackgroundResource(backgroundResId);
+        card.setPadding(dp(14), dp(14), dp(14), dp(14));
+        return card;
+    }
+
+    private TextView createText(String text, float textSize, int colorResId, boolean bold) {
+        TextView textView = new TextView(this);
+        textView.setText(text);
+        textView.setTextSize(textSize);
+        textView.setTextColor(getColorCompat(colorResId));
+        textView.setIncludeFontPadding(true);
+        if (bold) {
+            textView.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        }
+        return textView;
+    }
+
+    private LinearLayout.LayoutParams topMarginParams(int topMarginDp) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.topMargin = dp(topMarginDp);
+        return params;
     }
 
     private CharSequence formatReferenceText(XiaoTuning tuning, FingeringMode fingeringMode) {
