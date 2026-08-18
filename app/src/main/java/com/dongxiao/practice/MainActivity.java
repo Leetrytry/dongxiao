@@ -303,14 +303,9 @@ public final class MainActivity extends Activity {
             card.setElevation(dp(3));
         }
 
-        TextView seal = new TextView(this);
-        seal.setText(sealText);
-        seal.setGravity(Gravity.CENTER);
-        seal.setTextColor(getColorCompat(R.color.paper));
-        seal.setTextSize(16.0f);
-        seal.setTypeface(Typeface.create(Typeface.SERIF, Typeface.BOLD));
-        seal.setBackgroundResource(R.drawable.bg_home_badge);
-        LinearLayout.LayoutParams sealParams = new LinearLayout.LayoutParams(dp(44), dp(44));
+        View seal = createHomeBadge(sealText);
+        int badgeSize = "练".equals(sealText) ? dp(52) : dp(44);
+        LinearLayout.LayoutParams sealParams = new LinearLayout.LayoutParams(badgeSize, badgeSize);
         sealParams.rightMargin = dp(16);
         card.addView(seal, sealParams);
 
@@ -375,6 +370,28 @@ public final class MainActivity extends Activity {
         card.setLayoutParams(cardParams);
         card.setOnClickListener(listener);
         return card;
+    }
+
+    private View createHomeBadge(String sealText) {
+        if ("练".equals(sealText)) {
+            ImageView imageBadge = new ImageView(this);
+            imageBadge.setBackgroundResource(R.drawable.bg_home_badge);
+            imageBadge.setImageResource(R.drawable.home_badge_practice_xiao_line);
+            imageBadge.setColorFilter(getColorCompat(R.color.paper));
+            imageBadge.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            imageBadge.setPadding(dp(7), dp(7), dp(7), dp(7));
+            imageBadge.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            return imageBadge;
+        }
+
+        TextView textBadge = new TextView(this);
+        textBadge.setText(sealText);
+        textBadge.setGravity(Gravity.CENTER);
+        textBadge.setTextColor(getColorCompat(R.color.paper));
+        textBadge.setTextSize(16.0f);
+        textBadge.setTypeface(Typeface.create(Typeface.SERIF, Typeface.BOLD));
+        textBadge.setBackgroundResource(R.drawable.bg_home_badge);
+        return textBadge;
     }
 
     private void setupStartButton() {

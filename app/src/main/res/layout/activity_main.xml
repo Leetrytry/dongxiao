@@ -41,16 +41,15 @@
                         android:textSize="32sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
                         android:background="@drawable/bg_seal"
-                        android:fontFamily="serif"
-                        android:gravity="center"
-                        android:text="箫"
-                        android:textColor="#FFF8F0"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:contentDescription="@null"
+                        android:importantForAccessibility="no"
+                        android:padding="4dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/home_badge_xiao_met" />
                 </LinearLayout>
 
                 <TextView
