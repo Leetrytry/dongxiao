@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="background">#F7F4EF</color>
+    <color name="background">#FFFBEB</color>
     <color name="surface">#FFFFFF</color>
-    <color name="surface_warm">#FFF9EF</color>
-    <color name="surface_soft">#F1E7D6</color>
-    <color name="line">#E2D6C4</color>
-    <color name="ink">#202124</color>
-    <color name="muted">#6F6A61</color>
+    <color name="surface_warm">#FFF7E6</color>
+    <color name="surface_soft">#F6E7D0</color>
+    <color name="line">#EBD8B9</color>
+    <color name="ink">#0F172A</color>
+    <color name="muted">#475569</color>
     <color name="accent">#1D7A6B</color>
     <color name="accent_dark">#123C35</color>
     <color name="accent_soft">#DCECDF</color>
     <color name="bamboo">#2F6F50</color>
     <color name="paper">#FFFDF6</color>
-    <color name="paper_deep">#F6E9CF</color>
-    <color name="gold">#C49A45</color>
-    <color name="gold_dark">#8A6630</color>
-    <color name="cinnabar">#A7372F</color>
-    <color name="cinnabar_dark">#7C241F</color>
-    <color name="warning">#B45F06</color>
+    <color name="paper_deep">#F7E5BE</color>
+    <color name="gold">#D97706</color>
+    <color name="gold_dark">#9A3412</color>
+    <color name="cinnabar">#DC2626</color>
+    <color name="cinnabar_dark">#991B1B</color>
+    <color name="cinnabar_soft">#FEE2E2</color>
+    <color name="warning">#B45309</color>
     <color name="danger">#B3261E</color>
 </resources>

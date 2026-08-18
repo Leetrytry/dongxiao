@@ -283,23 +283,24 @@ public final class MainActivity extends Activity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.HORIZONTAL);
         card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setMinimumHeight(dp(96));
-        card.setPadding(dp(16), dp(16), dp(16), dp(16));
+        card.setMinimumHeight(dp(108));
+        card.setPadding(dp(18), dp(16), dp(18), dp(16));
         card.setBackgroundResource(R.drawable.bg_practice_card);
         card.setClickable(true);
         card.setFocusable(true);
+        card.setContentDescription(titleText + "。" + descriptionText);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            card.setElevation(dp(2));
+            card.setElevation(dp(3));
         }
 
         TextView seal = new TextView(this);
         seal.setText(sealText);
         seal.setGravity(Gravity.CENTER);
         seal.setTextColor(getColorCompat(R.color.paper));
-        seal.setTextSize(15.0f);
-        seal.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        seal.setBackgroundResource(R.drawable.bg_seal);
-        LinearLayout.LayoutParams sealParams = new LinearLayout.LayoutParams(dp(40), dp(40));
+        seal.setTextSize(16.0f);
+        seal.setTypeface(Typeface.create(Typeface.SERIF, Typeface.BOLD));
+        seal.setBackgroundResource(R.drawable.bg_home_badge);
+        LinearLayout.LayoutParams sealParams = new LinearLayout.LayoutParams(dp(44), dp(44));
         sealParams.rightMargin = dp(16);
         card.addView(seal, sealParams);
 
@@ -310,7 +311,7 @@ public final class MainActivity extends Activity {
         TextView title = new TextView(this);
         title.setText(titleText);
         title.setTextColor(getColorCompat(R.color.ink));
-        title.setTextSize(18.0f);
+        title.setTextSize(19.0f);
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
@@ -342,7 +343,11 @@ public final class MainActivity extends Activity {
         TextView action = new TextView(this);
         action.setText("进入");
         action.setGravity(Gravity.CENTER);
-        action.setTextColor(getColorCompat(R.color.accent));
+        action.setMinWidth(dp(56));
+        action.setMinHeight(dp(36));
+        action.setPadding(dp(12), dp(8), dp(12), dp(8));
+        action.setBackgroundResource(R.drawable.bg_action_chip);
+        action.setTextColor(getColorCompat(R.color.cinnabar_dark));
         action.setTextSize(13.0f);
         action.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         LinearLayout.LayoutParams actionParams = new LinearLayout.LayoutParams(
@@ -684,15 +689,53 @@ public final class MainActivity extends Activity {
     }
 
     private <T> ArrayAdapter<T> createAdapter(T[] items) {
-        ArrayAdapter<T> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
+        ArrayAdapter<T> adapter = new ArrayAdapter<T>(this, android.R.layout.simple_spinner_item, items) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView view = (TextView) super.getView(position, convertView, parent);
+                bindSpinnerText(view);
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                TextView view = (TextView) super.getDropDownView(position, convertView, parent);
+                bindSpinnerText(view);
+                return view;
+            }
+        };
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         return adapter;
     }
 
     private <T> ArrayAdapter<T> createAdapter(List<T> items) {
-        ArrayAdapter<T> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, items);
+        ArrayAdapter<T> adapter = new ArrayAdapter<T>(this, android.R.layout.simple_spinner_item, items) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView view = (TextView) super.getView(position, convertView, parent);
+                bindSpinnerText(view);
+                return view;
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                TextView view = (TextView) super.getDropDownView(position, convertView, parent);
+                bindSpinnerText(view);
+                return view;
+            }
+        };
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         return adapter;
+    }
+
+    private void bindSpinnerText(TextView view) {
+        view.setGravity(Gravity.CENTER_VERTICAL);
+        view.setTextColor(getColorCompat(R.color.ink));
+        view.setTextSize(14.0f);
+        view.setSingleLine(true);
+        view.setEllipsize(TextUtils.TruncateAt.END);
+        view.setPadding(dp(12), 0, dp(12), 0);
+        view.setMinHeight(dp(48));
     }
 
     private ArrayAdapter<TargetNote> createTargetAdapter(List<TargetNote> items) {
@@ -725,6 +768,12 @@ public final class MainActivity extends Activity {
             return;
         }
         view.setGravity(Gravity.CENTER_VERTICAL);
+        view.setTextColor(getColorCompat(R.color.ink));
+        view.setTextSize(14.0f);
+        view.setSingleLine(true);
+        view.setEllipsize(TextUtils.TruncateAt.END);
+        view.setPadding(dp(12), 0, dp(12), 0);
+        view.setMinHeight(dp(48));
         view.setText(JianpuNoteSpan.textFor(target));
     }
 
