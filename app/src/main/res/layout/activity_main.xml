@@ -56,16 +56,12 @@
                             android:textSize="32sp"
                             android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:background="@drawable/bg_seal"
-                            android:fontFamily="serif"
-                            android:gravity="center"
-                            android:text="箫"
-                            android:textColor="#FFF8F0"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
+                        <com.dongxiao.practice.ui.SealGlyphView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:importantForAccessibility="no"
+                            android:text="簫"
+                            android:textColor="#F4D58B" />
                     </LinearLayout>
 
                     <TextView
@@ -184,10 +180,10 @@
                         android:id="@+id/backButton"
                         android:layout_width="72dp"
                         android:layout_height="48dp"
-                        android:background="@drawable/bg_button_secondary"
+                        android:background="@drawable/bg_button_art_overlay"
                         android:text="返回"
                         android:textAllCaps="false"
-                        android:textColor="@color/ink"
+                        android:textColor="@color/accent_dark"
                         android:textSize="14sp" />
 
                     <TextView
@@ -198,7 +194,7 @@
                         android:layout_weight="1"
                         android:fontFamily="serif"
                         android:text="长音"
-                        android:textColor="@color/ink"
+                        android:textColor="@color/accent_dark"
                         android:textSize="24sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -210,10 +206,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:ellipsize="end"
-                android:background="@drawable/bg_summary_strip"
+                android:background="@drawable/bg_summary_strip_art"
                 android:maxLines="1"
                 android:text="F调 · 筒音作5 · 自动匹配目标音"
-                android:textColor="@color/ink"
+                android:textColor="@color/accent_dark"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
@@ -582,10 +578,10 @@
                         android:id="@+id/songBackButton"
                         android:layout_width="72dp"
                         android:layout_height="48dp"
-                        android:background="@drawable/bg_button_secondary"
+                        android:background="@drawable/bg_button_art_overlay"
                         android:text="返回"
                         android:textAllCaps="false"
-                        android:textColor="@color/ink"
+                        android:textColor="@color/accent_dark"
                         android:textSize="14sp" />
 
                     <TextView
@@ -596,7 +592,7 @@
                         android:layout_weight="1"
                         android:fontFamily="serif"
                         android:text="曲目练习"
-                        android:textColor="@color/ink"
+                        android:textColor="@color/accent_dark"
                         android:textSize="24sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -607,11 +603,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:background="@drawable/bg_summary_strip"
+                android:background="@drawable/bg_summary_strip_art"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="F调 · 4/4 · 90 BPM"
-                android:textColor="@color/ink"
+                android:textColor="@color/accent_dark"
                 android:textSize="13sp"
                 android:textStyle="bold" />
 
@@ -670,10 +666,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/bg_summary_strip"
+                android:background="@drawable/bg_summary_strip_art"
                 android:lineSpacingExtra="3dp"
                 android:text="智能伴奏会按谱面节奏播放，当前音符会同步高亮。"
-                android:textColor="@color/muted"
+                android:textColor="@color/accent_dark"
                 android:textSize="13sp" />
 
             <LinearLayout

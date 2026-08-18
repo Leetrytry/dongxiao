@@ -50,6 +50,7 @@ import com.dongxiao.practice.song.PracticeSong;
 import com.dongxiao.practice.song.SongPlayer;
 import com.dongxiao.practice.ui.DynamicScoreView;
 import com.dongxiao.practice.ui.JianpuNoteSpan;
+import com.dongxiao.practice.ui.SealGlyphView;
 import com.dongxiao.practice.ui.TunerView;
 import com.dongxiao.practice.ui.WaveformView;
 
@@ -425,14 +426,12 @@ public final class MainActivity extends Activity {
     }
 
     private View createHomeBadge(String sealText) {
-        TextView textBadge = new TextView(this);
-        textBadge.setText(sealText);
-        textBadge.setGravity(Gravity.CENTER);
-        textBadge.setTextColor(getColorCompat(R.color.paper));
-        textBadge.setTextSize(16.0f);
-        textBadge.setTypeface(Typeface.create(Typeface.SERIF, Typeface.BOLD));
-        textBadge.setBackgroundResource(R.drawable.bg_home_badge);
-        return textBadge;
+        SealGlyphView glyphView = new SealGlyphView(this);
+        glyphView.setGlyph("练".equals(sealText) ? "練" : sealText);
+        glyphView.setTintColor("曲".equals(sealText)
+                ? getColorCompat(R.color.gold_dark)
+                : getColorCompat(R.color.cinnabar_dark));
+        return glyphView;
     }
 
     private void setupStartButton() {
