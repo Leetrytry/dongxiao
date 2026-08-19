@@ -285,7 +285,7 @@ public final class PracticeSessionScorer {
                 if (scaleTotalNotes > 0) {
                     return String.format(
                             Locale.CHINA,
-                            "音阶专项：完成 %d/%d，误吹 %d 次，序列分 %.0f。%s",
+                            "音阶专项：级进/三度/分解完成 %d/%d，误吹 %d 次，序列分 %.0f。%s",
                             scaleCompletedNotes,
                             scaleTotalNotes,
                             scaleWrongAttempts,
@@ -297,7 +297,7 @@ public final class PracticeSessionScorer {
             case TONGUING:
                 return String.format(
                         Locale.CHINA,
-                        "吐音专项：起音 %d 次，速率 %.1f 次/秒，均匀度 %.0f 分。",
+                        "吐音专项：8连吐起音 %d 次，速率 %.1f 次/秒，4+4均匀度 %.0f 分。",
                         onsetCount,
                         maxTonguingRateHz,
                         maxTonguingEvennessPercent
@@ -305,7 +305,7 @@ public final class PracticeSessionScorer {
             case VIBRATO:
                 return String.format(
                         Locale.CHINA,
-                        "气震专项：最高 %.1f Hz，深度 ±%.0f cent，规律性 %.0f 分。",
+                        "气震专项：脉冲最高 %.1f Hz，深度 ±%.0f cent，规律性 %.0f 分。",
                         maxVibratoRateHz,
                         maxVibratoDepthCents,
                         maxVibratoRegularityPercent
@@ -313,7 +313,7 @@ public final class PracticeSessionScorer {
             case SLIDE:
                 return String.format(
                         Locale.CHINA,
-                        "滑音专项：滑动幅度 %.0f cent，平滑度 %.0f 分，%s。",
+                        "滑音专项：起点到落点 %.0f cent，平滑度 %.0f 分，%s。",
                         Math.max(maxAbsSlideCents, maxSlideRangeCents),
                         maxSlideSmoothnessPercent,
                         slideLanded ? "落点已回到目标音" : "落点还需更稳"
@@ -321,7 +321,7 @@ public final class PracticeSessionScorer {
             case ORNAMENT:
                 return String.format(
                         Locale.CHINA,
-                        "装饰音专项：回落 %d 次，最大离音 %.0f cent，快速波动 %d 次。",
+                        "装饰音专项：本-邻-本回落 %d 次，最大离音 %.0f cent，快速波动 %d 次。",
                         ornamentCount,
                         maxOrnamentExcursionCents,
                         rapidMoveCount

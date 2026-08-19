@@ -8,6 +8,8 @@ import java.util.List;
 
 public final class ScalePracticeProgress {
     public final List<TargetNote> sequence;
+    public final List<Integer> sectionStarts;
+    public final List<String> sectionLabels;
     public final TargetNote currentTarget;
     public final TargetNote nextTarget;
     public final int currentIndex;
@@ -22,6 +24,8 @@ public final class ScalePracticeProgress {
 
     ScalePracticeProgress(
             List<TargetNote> sequence,
+            List<Integer> sectionStarts,
+            List<String> sectionLabels,
             TargetNote currentTarget,
             TargetNote nextTarget,
             int currentIndex,
@@ -37,6 +41,12 @@ public final class ScalePracticeProgress {
         this.sequence = sequence == null
                 ? Collections.emptyList()
                 : Collections.unmodifiableList(new ArrayList<>(sequence));
+        this.sectionStarts = sectionStarts == null
+                ? Collections.emptyList()
+                : Collections.unmodifiableList(new ArrayList<>(sectionStarts));
+        this.sectionLabels = sectionLabels == null
+                ? Collections.emptyList()
+                : Collections.unmodifiableList(new ArrayList<>(sectionLabels));
         this.currentTarget = currentTarget;
         this.nextTarget = nextTarget;
         this.currentIndex = currentIndex;

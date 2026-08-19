@@ -185,12 +185,12 @@ public final class WaveformView extends View {
 
         paint.setStyle(Paint.Style.FILL);
         paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(10.0f * density);
+        paint.setTextSize(11.5f * density);
         paint.setColor(MUTED);
-        float labelY = bottom + 13.0f * density;
-        canvas.drawText(formatTimeLabel(WINDOW_SECONDS), left, labelY, paint);
+        float labelY = bottom + 14.0f * density;
+        canvas.drawText(formatTimeLabel(WINDOW_SECONDS), left + 7.0f * density, labelY, paint);
         canvas.drawText(formatTimeLabel(WINDOW_SECONDS / 2.0f), (left + right) / 2.0f, labelY, paint);
-        canvas.drawText("0ms", right, labelY, paint);
+        canvas.drawText("0ms", right - 7.0f * density, labelY, paint);
     }
 
     private float calculateRms() {

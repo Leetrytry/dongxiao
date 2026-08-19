@@ -57,7 +57,7 @@ public final class PracticeVisualizerView extends View {
     private void init() {
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeJoin(Paint.Join.ROUND);
-        setContentDescription("专项图谱等待拾音");
+        setContentDescription("练习反馈等待拾音");
     }
 
     public void setReading(
@@ -136,14 +136,14 @@ public final class PracticeVisualizerView extends View {
 
     private void drawTargetHeader(Canvas canvas, float width, float density) {
         paint.setTextSize(14.0f * density);
-        paint.setColor(MUTED);
-        paint.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText(mode == null ? "专项图谱" : mode.label + "图谱", 16.0f * density, 24.0f * density, paint);
-
-        paint.setTextAlign(Paint.Align.RIGHT);
-        paint.setColor(hasPitch ? centsColor(Math.abs(cents)) : MUTED);
-        String centsText = hasPitch ? formatCents(cents) : "等待拾音";
-        canvas.drawText(centsText, width - 16.0f * density, 24.0f * density, paint);
+        if (mode == PracticeMode.LONG_TONE) {
+            drawLongToneTopMetrics(canvas, width, density);
+        } else {
+            paint.setTextAlign(Paint.Align.RIGHT);
+            paint.setColor(hasPitch ? centsColor(Math.abs(cents)) : MUTED);
+            String centsText = hasPitch ? formatCents(cents) : "等待拾音";
+            canvas.drawText(centsText, width - 16.0f * density, 24.0f * density, paint);
+        }
 
         if (target != null) {
             paint.setColor(INK);
@@ -169,13 +169,12 @@ public final class PracticeVisualizerView extends View {
     private void drawLongTone(Canvas canvas, float width, float height, float top, float density) {
         float centerY = top + (height - top) * 0.48f;
         drawPitchRail(canvas, width, centerY, density, true);
-        drawHoldRing(canvas, width, height, density);
     }
 
     private void drawScalePitch(Canvas canvas, float width, float height, float top, float density) {
         float centerY = top + (height - top) * 0.50f;
         drawPitchRail(canvas, width, centerY, density, true);
-        drawCaption(canvas, "跟随上方简谱，当前音命中后进入下一音", width, height, density);
+        drawCaption(canvas, "级进 / 三度 / 分解：当前音命中后推进", width, height, density);
     }
 
     private void drawTonguing(Canvas canvas, float width, float height, float top, float density) {
@@ -187,7 +186,7 @@ public final class PracticeVisualizerView extends View {
         paint.setColor(LINE);
         canvas.drawLine(left, y, right, y, paint);
 
-        int slots = 10;
+        int slots = 8;
         long now = System.currentTimeMillis();
         trimEvents(onsetEvents, now);
         int active = onsetEvents.size();
@@ -198,8 +197,17 @@ public final class PracticeVisualizerView extends View {
             paint.setColor(filled ? ACCENT : Color.argb(58, 71, 85, 105));
             canvas.drawCircle(x, y, (filled ? 7.0f : 4.6f) * density, paint);
         }
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.2f * density);
+        paint.setColor(Color.argb(120, 71, 85, 105));
+        float splitX = left + (right - left) * 3.5f / Math.max(1, slots - 1);
+        canvas.drawLine(splitX, y - 17.0f * density, splitX, y + 17.0f * density, paint);
+
         paint.setStyle(Paint.Style.FILL);
         paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(12.5f * density);
+        paint.setColor(MUTED);
+        canvas.drawText("8连吐 · 4+4均分", width / 2.0f, y - 28.0f * density, paint);
         paint.setTextSize(13.0f * density);
         paint.setColor(INK);
         String text = String.format(
@@ -226,7 +234,9 @@ public final class PracticeVisualizerView extends View {
         paint.setStrokeWidth(1.2f * density);
         paint.setColor(LINE);
         canvas.drawLine(left, midY, right, midY, paint);
+        drawVibratoGuideDots(canvas, left, right, midY, amplitude, density);
 
+        paint.setStyle(Paint.Style.STROKE);
         path.reset();
         int points = 80;
         double cycles = Math.max(1.0, Math.min(8.0, rate() * 0.75));
@@ -268,7 +278,9 @@ public final class PracticeVisualizerView extends View {
         paint.setStrokeWidth(2.0f * density);
         paint.setColor(LINE);
         canvas.drawLine(left, centerY, right, centerY, paint);
+        drawSlideAnchors(canvas, left, right, centerY, density);
 
+        paint.setStyle(Paint.Style.STROKE);
         path.reset();
         float startX = stats == null || stats.slideDeltaCents >= 0.0 ? left : right;
         path.moveTo(startX, centerY + 28.0f * density);
@@ -319,6 +331,7 @@ public final class PracticeVisualizerView extends View {
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(ACCENT);
         canvas.drawCircle(centerX, centerY, 8.0f * density, paint);
+        drawOrnamentLabels(canvas, centerX, centerY, density);
         paint.setColor(CINNABAR);
         int index = 0;
         for (Long ignored : ornamentEvents) {
@@ -341,6 +354,48 @@ public final class PracticeVisualizerView extends View {
         );
     }
 
+    private void drawVibratoGuideDots(
+            Canvas canvas,
+            float left,
+            float right,
+            float midY,
+            float amplitude,
+            float density
+    ) {
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.argb(130, 180, 83, 9));
+        for (int i = 0; i < 4; i++) {
+            float x = left + (right - left) * (i + 0.5f) / 4.0f;
+            float y = midY - (i % 2 == 0 ? amplitude : -amplitude);
+            canvas.drawCircle(x, y, 3.2f * density, paint);
+        }
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(11.5f * density);
+        paint.setColor(MUTED);
+        canvas.drawText("参考：每拍2-4个均匀脉冲", (left + right) / 2.0f, midY - amplitude - 12.0f * density, paint);
+    }
+
+    private void drawSlideAnchors(Canvas canvas, float left, float right, float centerY, float density) {
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(11.5f * density);
+        paint.setColor(MUTED);
+        float startX = stats == null || stats.slideDeltaCents >= 0.0 ? left : right;
+        canvas.drawText("起", startX, centerY - 24.0f * density, paint);
+        paint.setColor(ACCENT);
+        canvas.drawText("落", (left + right) / 2.0f, centerY - 24.0f * density, paint);
+    }
+
+    private void drawOrnamentLabels(Canvas canvas, float centerX, float centerY, float density) {
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(11.5f * density);
+        paint.setColor(MUTED);
+        canvas.drawText("本", centerX, centerY - 48.0f * density, paint);
+        canvas.drawText("邻", centerX - 48.0f * density, centerY + 5.0f * density, paint);
+        canvas.drawText("本", centerX, centerY + 56.0f * density, paint);
+    }
+
     private void drawPitchRail(Canvas canvas, float width, float centerY, float density, boolean showTicks) {
         float left = 22.0f * density;
         float right = width - left;
@@ -359,13 +414,21 @@ public final class PracticeVisualizerView extends View {
 
         if (showTicks) {
             int[] ticks = {-50, -25, 0, 25, 50};
-            paint.setTextAlign(Paint.Align.CENTER);
-            paint.setTextSize(10.0f * density);
             for (int tick : ticks) {
                 float x = mapCentsToX(tick, left, right);
                 paint.setColor(tick == 0 ? ACCENT : MUTED);
                 canvas.drawLine(x, centerY - 14.0f * density, x, centerY + 14.0f * density, paint);
-                canvas.drawText(String.valueOf(tick), x, centerY + 32.0f * density, paint);
+            }
+
+            paint.setStyle(Paint.Style.FILL);
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setTextSize(12.5f * density);
+            paint.setFakeBoldText(false);
+            int[] labeledTicks = {-50, 0, 50};
+            for (int tick : labeledTicks) {
+                float x = mapCentsToX(tick, left, right);
+                paint.setColor(tick == 0 ? ACCENT : MUTED);
+                canvas.drawText(String.valueOf(tick), x, centerY + 35.0f * density, paint);
             }
         }
 
@@ -377,28 +440,26 @@ public final class PracticeVisualizerView extends View {
         canvas.drawLine(x, centerY - 32.0f * density, x, centerY + 8.0f * density, paint);
     }
 
-    private void drawHoldRing(Canvas canvas, float width, float height, float density) {
+    private void drawLongToneTopMetrics(Canvas canvas, float width, float density) {
         double held = stats == null ? 0.0 : stats.heldSeconds;
         double stability = stats == null
                 ? 0.0
                 : Math.max(0.0, Math.min(100.0, PracticeStats.stabilityPercent(stats.stabilityCents)));
-        float centerX = width / 2.0f;
-        float centerY = height - 28.0f * density;
-        float radius = 15.0f * density;
-
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(4.0f * density);
-        paint.setColor(LINE);
-        canvas.drawCircle(centerX, centerY, radius, paint);
-        paint.setColor(stability >= 80.0 ? ACCENT : WARNING);
-        rect.set(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
-        canvas.drawArc(rect, -90.0f, (float) Math.min(360.0, held / 10.0 * 360.0), false, paint);
 
         paint.setStyle(Paint.Style.FILL);
         paint.setTextAlign(Paint.Align.LEFT);
-        paint.setTextSize(12.0f * density);
-        paint.setColor(MUTED);
-        canvas.drawText(String.format(Locale.CHINA, "命中 %.1fs", held), centerX + 24.0f * density, centerY + 4.0f * density, paint);
+        paint.setTextSize(14.0f * density);
+        paint.setFakeBoldText(true);
+        paint.setColor(ACCENT);
+        canvas.drawText(String.format(Locale.CHINA, "命中 %.1fs", held), 16.0f * density, 24.0f * density, paint);
+
+        paint.setTextAlign(Paint.Align.RIGHT);
+        paint.setColor(stability >= 80.0 ? ACCENT : stability >= 60.0 ? WARNING : DANGER);
+        String stabilityText = stats == null || !stats.stabilityReady
+                ? "稳定 --"
+                : String.format(Locale.CHINA, "稳定 %.0f%%", stability);
+        canvas.drawText(stabilityText, width - 16.0f * density, 24.0f * density, paint);
+        paint.setFakeBoldText(false);
     }
 
     private void drawCaption(Canvas canvas, String text, float width, float height, float density) {
@@ -429,7 +490,7 @@ public final class PracticeVisualizerView extends View {
     private void updateContentDescription() {
         String modeLabel = mode == null ? "专项" : mode.label;
         String pitch = hasPitch ? formatCents(cents) : "未检测到音高";
-        setContentDescription(modeLabel + "图谱，" + pitch);
+        setContentDescription(modeLabel + "反馈，" + pitch);
     }
 
     private static void trimEvents(Deque<Long> events, long now) {

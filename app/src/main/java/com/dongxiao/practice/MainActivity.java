@@ -1024,7 +1024,7 @@ public final class MainActivity extends Activity {
         if (mode == PracticeMode.SCALE && target != null) {
             builder.append("音阶从 ");
             JianpuNoteSpan.appendTo(builder, target);
-            builder.append(" 起，上行八音再下行");
+            builder.append(" 起，级进/三度/分解");
         } else if (isFixedTargetTechnique(mode) && target != null) {
             builder.append("固定目标 ");
             JianpuNoteSpan.appendTo(builder, target);
@@ -1729,7 +1729,7 @@ public final class MainActivity extends Activity {
         if (progress.completed) {
             return String.format(
                     Locale.CHINA,
-                    "音阶完成：%d/%d\n误吹次数：%d\n建议：停止查看评分，或重新开始下一轮。",
+                    "音阶完成：%d/%d\n误吹次数：%d\n建议：查看三段乐谱中哪一段最容易错。",
                     progress.completedNotes,
                     progress.totalNotes,
                     progress.wrongAttempts
@@ -1738,12 +1738,29 @@ public final class MainActivity extends Activity {
         String centsText = stats == null || !stats.hasPitch ? "--" : MusicTheory.formatCents(stats.cents);
         return String.format(
                 Locale.CHINA,
-                "音阶进度：%d/%d\n当前偏差：%s\n误吹次数：%d",
+                "音阶：%s · %d/%d\n当前偏差：%s\n误吹次数：%d",
+                scaleSectionLabel(progress),
                 progress.currentIndex + 1,
                 progress.totalNotes,
                 centsText,
                 progress.wrongAttempts
         );
+    }
+
+    private static String scaleSectionLabel(ScalePracticeProgress progress) {
+        if (progress == null || progress.sectionStarts == null || progress.sectionStarts.isEmpty()) {
+            return "序列";
+        }
+        int section = 0;
+        for (int i = 0; i < progress.sectionStarts.size(); i++) {
+            if (progress.currentIndex >= progress.sectionStarts.get(i)) {
+                section = i;
+            }
+        }
+        if (progress.sectionLabels != null && section < progress.sectionLabels.size()) {
+            return progress.sectionLabels.get(section);
+        }
+        return "序列";
     }
 
     private String slideDirection(double slideDeltaCents) {

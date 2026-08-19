@@ -8,13 +8,15 @@ import java.util.Collections;
 import java.util.List;
 
 public final class ScalePracticeEngine {
-    private static final int ASCENDING_NOTE_COUNT = 8;
+    private static final int SCALE_SPAN_NOTE_COUNT = 8;
     private static final double HIT_TOLERANCE_CENTS = 25.0;
     private static final double WRONG_NOTE_TOLERANCE_CENTS = 45.0;
     private static final long REQUIRED_HIT_MS = 360L;
     private static final long WRONG_NOTE_REFRACTORY_MS = 700L;
 
     private final List<TargetNote> sequence = new ArrayList<>();
+    private final List<Integer> sectionStarts = new ArrayList<>();
+    private final List<String> sectionLabels = new ArrayList<>();
     private int currentIndex = 0;
     private int completedNotes = 0;
     private int wrongAttempts = 0;
@@ -28,6 +30,8 @@ public final class ScalePracticeEngine {
 
     public void reset(List<TargetNote> targets, TargetNote startTarget) {
         sequence.clear();
+        sectionStarts.clear();
+        sectionLabels.clear();
         currentIndex = 0;
         completedNotes = 0;
         wrongAttempts = 0;
@@ -43,17 +47,13 @@ public final class ScalePracticeEngine {
             return;
         }
         int startIndex = indexOfTarget(targets, startTarget);
-        int availableAscending = Math.min(ASCENDING_NOTE_COUNT, targets.size());
-        if (startIndex + availableAscending > targets.size()) {
-            startIndex = Math.max(0, targets.size() - availableAscending);
+        int span = Math.min(SCALE_SPAN_NOTE_COUNT, targets.size());
+        if (startIndex + span > targets.size()) {
+            startIndex = Math.max(0, targets.size() - span);
         }
-        int endIndex = Math.min(targets.size() - 1, startIndex + availableAscending - 1);
-        for (int i = startIndex; i <= endIndex; i++) {
-            sequence.add(targets.get(i));
-        }
-        for (int i = endIndex - 1; i >= startIndex; i--) {
-            sequence.add(targets.get(i));
-        }
+        addSection(targets, startIndex, new int[]{0, 1, 2, 3, 4, 5, 6, 7}, "级进");
+        addSection(targets, startIndex, new int[]{0, 2, 1, 3, 2, 4, 3, 5}, "三度");
+        addSection(targets, startIndex, new int[]{0, 2, 4, 7, 4, 2, 1, 0}, "分解");
     }
 
     public boolean hasSequence() {
@@ -70,6 +70,8 @@ public final class ScalePracticeEngine {
     public ScalePracticeProgress snapshot() {
         return new ScalePracticeProgress(
                 sequence,
+                sectionStarts,
+                sectionLabels,
                 currentTarget(),
                 nextTarget(),
                 currentIndex,
@@ -166,6 +168,19 @@ public final class ScalePracticeEngine {
             }
         }
         return 0;
+    }
+
+    private void addSection(List<TargetNote> targets, int startIndex, int[] offsets, String label) {
+        if (targets == null || offsets == null || offsets.length == 0) {
+            return;
+        }
+        sectionStarts.add(sequence.size());
+        sectionLabels.add(label);
+        int maxIndex = targets.size() - 1;
+        for (int offset : offsets) {
+            int index = Math.max(0, Math.min(maxIndex, startIndex + offset));
+            sequence.add(targets.get(index));
+        }
     }
 
     private static TargetNote closestTarget(double frequencyHz, List<TargetNote> candidates) {

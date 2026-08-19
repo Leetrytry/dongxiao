@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Locale;
 
 public final class ScaleScoreView extends View {
-    private static final int FIRST_ROW_NOTES = 8;
+    private static final int FALLBACK_ROW_NOTES = 8;
     private static final double REQUIRED_HIT_SECONDS = 0.36;
 
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -25,6 +25,8 @@ public final class ScaleScoreView extends View {
     private final Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
     private final List<TargetNote> sequence = new ArrayList<>();
+    private final List<Integer> sectionStarts = new ArrayList<>();
+    private final List<String> sectionLabels = new ArrayList<>();
 
     private int currentIndex = 0;
     private int completedNotes = 0;
@@ -52,8 +54,16 @@ public final class ScaleScoreView extends View {
 
     public void setProgress(ScalePracticeProgress progress) {
         sequence.clear();
+        sectionStarts.clear();
+        sectionLabels.clear();
         if (progress != null && progress.sequence != null) {
             sequence.addAll(progress.sequence);
+            if (progress.sectionStarts != null && !progress.sectionStarts.isEmpty()) {
+                sectionStarts.addAll(progress.sectionStarts);
+            }
+            if (progress.sectionLabels != null && !progress.sectionLabels.isEmpty()) {
+                sectionLabels.addAll(progress.sectionLabels);
+            }
             currentIndex = progress.currentIndex;
             completedNotes = progress.completedNotes;
             wrongAttempts = progress.wrongAttempts;
@@ -81,10 +91,12 @@ public final class ScaleScoreView extends View {
         }
 
         drawPaperLines(canvas, width, height);
-        int split = Math.min(FIRST_ROW_NOTES, sequence.size());
-        drawRow(canvas, 0, split, 0, width, height);
-        if (split < sequence.size()) {
-            drawRow(canvas, split, sequence.size(), 1, width, height);
+        List<Integer> starts = rowStarts();
+        int rowCount = starts.size();
+        for (int row = 0; row < rowCount; row++) {
+            int start = starts.get(row);
+            int end = row == rowCount - 1 ? sequence.size() : starts.get(row + 1);
+            drawRow(canvas, start, end, row, rowCount, width, height);
         }
         drawOverallProgress(canvas, width, height);
     }
@@ -92,34 +104,46 @@ public final class ScaleScoreView extends View {
     private void drawPaperLines(Canvas canvas, int width, int height) {
         linePaint.setStrokeWidth(dp(1));
         linePaint.setColor(color(R.color.line));
-        float left = dp(14);
+        float left = dp(48);
         float right = width - dp(14);
         float top = dp(10);
         float bottom = height - dp(14);
-        float rowHeight = (bottom - top) / 2.0f;
-        for (int row = 0; row < 2; row++) {
+        int rowCount = rowStarts().size();
+        float rowHeight = (bottom - top) / Math.max(1, rowCount);
+        for (int row = 0; row < rowCount; row++) {
             float y = top + row * rowHeight + rowHeight * 0.56f;
             canvas.drawLine(left, y, right, y, linePaint);
         }
     }
 
-    private void drawRow(Canvas canvas, int start, int end, int row, int width, int height) {
-        float left = dp(16);
+    private void drawRow(Canvas canvas, int start, int end, int row, int rowCount, int width, int height) {
+        float left = dp(52);
         float right = width - dp(16);
         float top = dp(8);
         float bottom = height - dp(16);
-        float rowHeight = (bottom - top) / 2.0f;
+        float rowHeight = (bottom - top) / Math.max(1, rowCount);
         float rowTop = top + row * rowHeight;
         int count = Math.max(1, end - start);
         float cellWidth = (right - left) / count;
 
+        drawSectionLabel(canvas, row, rowTop, rowHeight);
         drawMeasureBars(canvas, left, rowTop, rowHeight, cellWidth, count);
         for (int i = start; i < end; i++) {
             int indexInRow = i - start;
             float centerX = left + (indexInRow + 0.5f) * cellWidth;
-            float baseline = rowTop + rowHeight * 0.64f;
+            float baseline = rowTop + rowHeight * 0.68f;
             drawNote(canvas, sequence.get(i), i, centerX, baseline, cellWidth);
         }
+    }
+
+    private void drawSectionLabel(Canvas canvas, int row, float rowTop, float rowHeight) {
+        textPaint.setTextAlign(Paint.Align.LEFT);
+        textPaint.setFakeBoldText(true);
+        textPaint.setTextSize(dp(10.5f));
+        textPaint.setColor(color(R.color.muted));
+        String label = row < sectionLabels.size() ? sectionLabels.get(row) : "练习";
+        canvas.drawText(label, dp(12), rowTop + rowHeight * 0.60f, textPaint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
     }
 
     private void drawMeasureBars(
@@ -159,26 +183,26 @@ public final class ScaleScoreView extends View {
 
         if (isCurrent) {
             rect.set(
-                    centerX - Math.min(dp(18), cellWidth * 0.38f),
-                    baseline - dp(27),
-                    centerX + Math.min(dp(18), cellWidth * 0.38f),
-                    baseline + dp(10)
+                    centerX - Math.min(dp(16), cellWidth * 0.38f),
+                    baseline - dp(24),
+                    centerX + Math.min(dp(16), cellWidth * 0.38f),
+                    baseline + dp(8)
             );
             notePaint.setColor(color(R.color.cinnabar_soft));
             canvas.drawOval(rect, notePaint);
             linePaint.setColor(color(R.color.cinnabar));
             linePaint.setStrokeWidth(dp(1.5f));
-            canvas.drawLine(centerX, baseline - dp(31), centerX, baseline + dp(13), linePaint);
+            canvas.drawLine(centerX, baseline - dp(27), centerX, baseline + dp(11), linePaint);
         }
 
-        textPaint.setTextSize(dp(22));
+        textPaint.setTextSize(dp(19.5f));
         textPaint.setColor(noteColor);
         textPaint.setFakeBoldText(true);
         JianpuNoteSpan.drawCentered(canvas, textPaint, note.scaleDegree, note.register, centerX, baseline);
 
         if (isCompleted) {
             notePaint.setColor(color(R.color.accent));
-            canvas.drawCircle(centerX, baseline + dp(18), dp(2.2f), notePaint);
+            canvas.drawCircle(centerX, baseline + dp(15), dp(2.0f), notePaint);
         } else if (isCurrent) {
             drawHitProgress(canvas, centerX, baseline, cellWidth);
         }
@@ -189,7 +213,7 @@ public final class ScaleScoreView extends View {
         float lineWidth = Math.min(dp(28), cellWidth * 0.52f);
         float left = centerX - lineWidth / 2.0f;
         float right = centerX + lineWidth / 2.0f;
-        float y = baseline + dp(17);
+        float y = baseline + dp(14);
         linePaint.setStrokeWidth(dp(2));
         linePaint.setColor(color(R.color.line));
         canvas.drawLine(left, y, right, y, linePaint);
@@ -207,6 +231,20 @@ public final class ScaleScoreView extends View {
         canvas.drawLine(left, y, right, y, linePaint);
         linePaint.setColor(color(R.color.accent));
         canvas.drawLine(left, y, left + (right - left) * progress, y, linePaint);
+    }
+
+    private List<Integer> rowStarts() {
+        if (!sectionStarts.isEmpty()) {
+            return sectionStarts;
+        }
+        List<Integer> starts = new ArrayList<>();
+        for (int start = 0; start < sequence.size(); start += FALLBACK_ROW_NOTES) {
+            starts.add(start);
+        }
+        if (starts.isEmpty()) {
+            starts.add(0);
+        }
+        return starts;
     }
 
     private void updateContentDescription(ScalePracticeProgress progress) {
