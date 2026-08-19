@@ -103,15 +103,19 @@ public final class TunerView extends View {
         float barLeft = padding;
         float barRight = width - padding;
         float cornerRadius = 12.0f * density;
+        float topInfoBaseline = 22.0f * density;
+        float topInfoTextSize = 14.0f * density;
 
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(CHART_SURFACE);
         canvas.drawRoundRect(new RectF(0, 0, width, height), cornerRadius, cornerRadius, paint);
 
         paint.setColor(INK);
-        paint.setTextSize(16.0f * density);
-        drawTopMetrics(canvas, width, padding, density);
-        drawTargetLabel(canvas, centerX, 36.0f * density);
+        paint.setTextSize(topInfoTextSize);
+        drawTopMetrics(canvas, width, padding, topInfoBaseline, topInfoTextSize);
+        paint.setColor(INK);
+        paint.setTextSize(topInfoTextSize);
+        drawTargetLabel(canvas, centerX, topInfoBaseline);
 
         paint.setColor(GUIDE);
         RectF bar = new RectF(barLeft, barTop, barRight, barTop + barHeight);
@@ -155,7 +159,7 @@ public final class TunerView extends View {
         canvas.drawCircle(x, barTop + barHeight / 2.0f, 9.0f * density, paint);
 
         paint.setStrokeWidth(3.0f * density);
-        canvas.drawLine(x, barTop - 34.0f * density, x, barTop + 6.0f * density, paint);
+        canvas.drawLine(x, barTop - 24.0f * density, x, barTop + 6.0f * density, paint);
         paint.setStyle(Paint.Style.FILL);
     }
 
@@ -196,12 +200,17 @@ public final class TunerView extends View {
         );
     }
 
-    private void drawTopMetrics(Canvas canvas, float width, float padding, float density) {
+    private void drawTopMetrics(
+            Canvas canvas,
+            float width,
+            float padding,
+            float baseline,
+            float textSize
+    ) {
         if (Double.isNaN(stabilityPercent) && Double.isNaN(heldSeconds)) {
             return;
         }
-        paint.setTextSize(12.0f * density);
-        float baseline = 19.0f * density;
+        paint.setTextSize(textSize);
         if (!Double.isNaN(heldSeconds)) {
             paint.setTextAlign(Paint.Align.LEFT);
             paint.setColor(ACCENT);

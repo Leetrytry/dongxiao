@@ -43,6 +43,8 @@ import com.dongxiao.practice.practice.PracticeNoteScore;
 import com.dongxiao.practice.practice.PracticeScore;
 import com.dongxiao.practice.practice.PracticeSessionScorer;
 import com.dongxiao.practice.practice.PracticeStats;
+import com.dongxiao.practice.practice.ScalePracticeEngine;
+import com.dongxiao.practice.practice.ScalePracticeProgress;
 import com.dongxiao.practice.song.ImageScore;
 import com.dongxiao.practice.song.ImageScoreMarker;
 import com.dongxiao.practice.song.ImageScoreRepository;
@@ -53,8 +55,9 @@ import com.dongxiao.practice.song.PracticeSong;
 import com.dongxiao.practice.song.SongPlayer;
 import com.dongxiao.practice.ui.DynamicScoreView;
 import com.dongxiao.practice.ui.JianpuNoteSpan;
+import com.dongxiao.practice.ui.PracticeVisualizerView;
+import com.dongxiao.practice.ui.ScaleScoreView;
 import com.dongxiao.practice.ui.SealGlyphView;
-import com.dongxiao.practice.ui.TunerView;
 import com.dongxiao.practice.ui.WaveformView;
 
 import java.io.BufferedReader;
@@ -69,12 +72,14 @@ import java.util.Locale;
 public final class MainActivity extends Activity {
     private static final int REQUEST_RECORD_AUDIO = 1001;
     private static final float PRACTICE_HOME_CARD_HEIGHT_RATIO = 0.72f;
+    private static final double HOLD_PRAISE_SECONDS = 10.0;
 
     private TextView statusText;
     private TextView instructionText;
     private TextView pitchText;
     private TextView detailText;
     private TextView metricText;
+    private TextView techniqueMetricText;
     private TextView scoreText;
     private TextView modeTitleText;
     private TextView practiceSummaryText;
@@ -82,6 +87,7 @@ public final class MainActivity extends Activity {
     private TextView songMetaText;
     private TextView songStatusText;
     private TextView imageScorePageText;
+    private ScaleScoreView scaleScoreView;
     private LinearLayout homeContainer;
     private FrameLayout practiceContainer;
     private FrameLayout songContainer;
@@ -102,12 +108,14 @@ public final class MainActivity extends Activity {
     private Button scoreDetailButton;
     private ImageView imageScoreView;
     private ImageView practiceHeaderImage;
-    private TunerView tunerView;
+    private ImageView holdPraiseThumb;
+    private PracticeVisualizerView practiceVisualizerView;
     private WaveformView waveformView;
     private DynamicScoreView dynamicScoreView;
 
     private final PracticeAnalyzer practiceAnalyzer = new PracticeAnalyzer();
     private final PracticeSessionScorer sessionScorer = new PracticeSessionScorer();
+    private final ScalePracticeEngine scalePracticeEngine = new ScalePracticeEngine();
     private final List<TargetNote> targets = new ArrayList<>();
     private final List<PracticeSong> songs = new ArrayList<>();
     private final List<ImageScore> imageScores = ImageScoreRepository.defaults();
@@ -161,6 +169,7 @@ public final class MainActivity extends Activity {
         pitchText = findViewById(R.id.pitchText);
         detailText = findViewById(R.id.detailText);
         metricText = findViewById(R.id.metricText);
+        techniqueMetricText = findViewById(R.id.techniqueMetricText);
         scoreText = findViewById(R.id.scoreText);
         modeTitleText = findViewById(R.id.modeTitleText);
         practiceSummaryText = findViewById(R.id.practiceSummaryText);
@@ -168,6 +177,7 @@ public final class MainActivity extends Activity {
         songMetaText = findViewById(R.id.songMetaText);
         songStatusText = findViewById(R.id.songStatusText);
         imageScorePageText = findViewById(R.id.imageScorePageText);
+        scaleScoreView = findViewById(R.id.scaleScoreView);
         practiceHeaderImage = findViewById(R.id.practiceHeaderImage);
         homeContainer = findViewById(R.id.homeContainer);
         practiceContainer = findViewById(R.id.practiceContainer);
@@ -188,7 +198,8 @@ public final class MainActivity extends Activity {
         imageScoreNextButton = findViewById(R.id.imageScoreNextButton);
         scoreDetailButton = findViewById(R.id.scoreDetailButton);
         imageScoreView = findViewById(R.id.imageScoreView);
-        tunerView = findViewById(R.id.tunerView);
+        holdPraiseThumb = findViewById(R.id.holdPraiseThumb);
+        practiceVisualizerView = findViewById(R.id.practiceVisualizerView);
         waveformView = findViewById(R.id.waveformView);
         dynamicScoreView = findViewById(R.id.dynamicScoreView);
     }
@@ -236,6 +247,7 @@ public final class MainActivity extends Activity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 updateTargets();
+                resetScalePractice();
                 practiceAnalyzer.reset();
                 sessionScorer.reset();
                 sessionHasFrames = false;
@@ -253,6 +265,7 @@ public final class MainActivity extends Activity {
                 practiceAnalyzer.reset();
                 sessionScorer.reset();
                 sessionHasFrames = false;
+                resetScalePractice();
                 updatePracticeSummary();
             }
 
@@ -625,6 +638,7 @@ public final class MainActivity extends Activity {
     private void showHome() {
         stopListening();
         stopSongPlayback(true);
+        setHoldPraiseVisible(false);
         currentPracticeMode = null;
         homeContainer.setVisibility(View.VISIBLE);
         practiceContainer.setVisibility(View.GONE);
@@ -639,11 +653,14 @@ public final class MainActivity extends Activity {
         practiceContainer.setVisibility(View.VISIBLE);
         songContainer.setVisibility(View.GONE);
         practiceAnalyzer.reset();
+        setHoldPraiseVisible(false);
         updateInstruction();
         updateTargets();
+        resetScalePractice();
         pitchText.setText("未检测到稳定音高");
         detailText.setText("Hz、音名和 cent 偏差会显示在这里。");
         metricText.setText("练习指标等待开始。");
+        updateTechniqueMetricText("练习指标等待开始。");
         scorePanel.setVisibility(View.GONE);
         scoreText.setText("");
         latestPracticeScore = null;
@@ -984,7 +1001,7 @@ public final class MainActivity extends Activity {
         if (!targets.isEmpty()) {
             targetSpinner.setSelection(0);
             TargetNote target = targets.get(targetSpinner.getSelectedItemPosition());
-            tunerView.setReading(0.0, false, target);
+            practiceVisualizerView.clear(selectedPracticeMode(), target);
             if (statusText != null) {
                 statusText.setText(formatReferenceText(tuning, fingeringMode));
             }
@@ -1003,7 +1020,15 @@ public final class MainActivity extends Activity {
         String fingeringLabel = fingeringMode == null ? "未选筒音" : fingeringMode.label;
         SpannableStringBuilder builder = new SpannableStringBuilder();
         builder.append(tuningLabel).append(" · ").append(fingeringLabel).append(" · ");
-        if (autoTargetCheck != null && autoTargetCheck.isChecked()) {
+        PracticeMode mode = selectedPracticeMode();
+        if (mode == PracticeMode.SCALE && target != null) {
+            builder.append("音阶从 ");
+            JianpuNoteSpan.appendTo(builder, target);
+            builder.append(" 起，上行八音再下行");
+        } else if (isFixedTargetTechnique(mode) && target != null) {
+            builder.append("固定目标 ");
+            JianpuNoteSpan.appendTo(builder, target);
+        } else if (autoTargetCheck != null && autoTargetCheck.isChecked()) {
             builder.append("自动匹配目标音");
         } else if (target == null) {
             builder.append("未选目标音");
@@ -1011,6 +1036,32 @@ public final class MainActivity extends Activity {
             JianpuNoteSpan.appendTo(builder, target);
         }
         practiceSummaryText.setText(builder);
+    }
+
+    private void resetScalePractice() {
+        scalePracticeEngine.reset(targets, selectedTarget());
+        if (selectedPracticeMode() == PracticeMode.SCALE) {
+            updateScaleScoreView(scalePracticeEngine.snapshot());
+        }
+    }
+
+    private void ensureScalePracticeReady() {
+        if (!scalePracticeEngine.hasSequence()) {
+            resetScalePractice();
+        }
+    }
+
+    private void updateScaleScoreView(ScalePracticeProgress progress) {
+        if (scaleScoreView == null) {
+            return;
+        }
+        if (selectedPracticeMode() != PracticeMode.SCALE) {
+            scaleScoreView.setVisibility(View.GONE);
+            scaleScoreView.setProgress(null);
+            return;
+        }
+        scaleScoreView.setVisibility(View.VISIBLE);
+        scaleScoreView.setProgress(progress);
     }
 
     private void updateInstruction() {
@@ -1024,6 +1075,44 @@ public final class MainActivity extends Activity {
         if (mode != null && instructionText != null) {
             instructionText.setText(mode.instruction);
         }
+        updateAutoTargetControlForMode(mode);
+        if (mode == PracticeMode.SCALE) {
+            resetScalePractice();
+            updateScaleScoreView(scalePracticeEngine.snapshot());
+        } else if (scaleScoreView != null) {
+            scaleScoreView.setVisibility(View.GONE);
+            scaleScoreView.setProgress(null);
+        }
+    }
+
+    private void updateAutoTargetControlForMode(PracticeMode mode) {
+        if (autoTargetCheck == null) {
+            return;
+        }
+        if (mode == PracticeMode.SCALE) {
+            autoTargetCheck.setEnabled(false);
+            autoTargetCheck.setAlpha(0.62f);
+            autoTargetCheck.setText("音阶模式按序列推进");
+        } else if (isFixedTargetTechnique(mode)) {
+            autoTargetCheck.setEnabled(false);
+            autoTargetCheck.setAlpha(0.62f);
+            autoTargetCheck.setText("专项模式固定目标音");
+        } else {
+            autoTargetCheck.setEnabled(true);
+            autoTargetCheck.setAlpha(1.0f);
+            autoTargetCheck.setText("自动匹配最近目标音");
+        }
+    }
+
+    private static boolean shouldAutoMatchTarget(PracticeMode mode) {
+        return mode == PracticeMode.LONG_TONE;
+    }
+
+    private static boolean isFixedTargetTechnique(PracticeMode mode) {
+        return mode == PracticeMode.TONGUING
+                || mode == PracticeMode.VIBRATO
+                || mode == PracticeMode.SLIDE
+                || mode == PracticeMode.ORNAMENT;
     }
 
     private void ensurePermissionAndStart() {
@@ -1038,6 +1127,7 @@ public final class MainActivity extends Activity {
     private void startListening() {
         practiceAnalyzer.reset();
         sessionScorer.reset();
+        resetScalePractice();
         sessionHasFrames = false;
         latestPracticeScore = null;
         scorePanel.setVisibility(View.GONE);
@@ -1058,7 +1148,8 @@ public final class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     statusText.setText(message);
                     startButton.setText("开始拾音");
-                    tunerView.setReading(0.0, false, "麦克风不可用");
+                    practiceVisualizerView.clear(selectedPracticeMode(), selectedTarget());
+                    setHoldPraiseVisible(false);
                     waveformView.clear();
                 });
             }
@@ -1096,6 +1187,7 @@ public final class MainActivity extends Activity {
         if (waveformView != null) {
             waveformView.clear();
         }
+        setHoldPraiseVisible(false);
     }
 
     private void handleAudioFrame(PitchResult result, long timestampMs) {
@@ -1106,7 +1198,14 @@ public final class MainActivity extends Activity {
         XiaoTuning tuning = selectedTuning();
         PracticeMode mode = selectedPracticeMode();
         TargetNote target = selectedTarget();
-        if (result.voiced && autoTargetCheck.isChecked() && tuning != null) {
+        ScalePracticeProgress scaleProgress = null;
+        if (mode == PracticeMode.SCALE) {
+            ensureScalePracticeReady();
+            target = scalePracticeEngine.currentTarget();
+        } else if (result.voiced
+                && shouldAutoMatchTarget(mode)
+                && autoTargetCheck.isChecked()
+                && tuning != null) {
             target = tuning.closestTarget(result.frequencyHz, targets);
         }
         if (target == null || mode == null) {
@@ -1115,11 +1214,26 @@ public final class MainActivity extends Activity {
 
         PracticeStats stats = practiceAnalyzer.update(result, target, timestampMs);
         sessionScorer.update(result, target, stats, timestampMs);
+        if (mode == PracticeMode.SCALE) {
+            scaleProgress = scalePracticeEngine.update(result, timestampMs, targets);
+            sessionScorer.updateScaleProgress(scaleProgress);
+            updateScaleScoreView(scaleProgress);
+            if (scaleProgress.justAdvanced) {
+                practiceAnalyzer.reset();
+            }
+        }
+        updateHoldPraise(mode, stats);
         sessionHasFrames = true;
+        TargetNote displayTarget = mode == PracticeMode.SCALE
+                ? scalePracticeEngine.currentTarget()
+                : target;
+        if (displayTarget == null) {
+            displayTarget = target;
+        }
         if (result.voiced) {
-            updateVoicedUi(result, target, mode, stats);
+            updateVoicedUi(result, displayTarget, mode, stats, scaleProgress);
         } else {
-            updateUnvoicedUi(target, mode, stats);
+            updateUnvoicedUi(displayTarget, mode, stats, scaleProgress);
         }
     }
 
@@ -1127,20 +1241,15 @@ public final class MainActivity extends Activity {
             PitchResult result,
             TargetNote target,
             PracticeMode mode,
-            PracticeStats stats
+            PracticeStats stats,
+            ScalePracticeProgress scaleProgress
     ) {
         int detectedMidi = MusicTheory.nearestMidi(result.frequencyHz);
         double detectedMidiFrequency = MusicTheory.frequencyForMidi(detectedMidi);
         double centsToNearest = MusicTheory.centsBetween(result.frequencyHz, detectedMidiFrequency);
         double centsToTarget = target.centsFrom(result.frequencyHz);
 
-        tunerView.setReading(
-                centsToTarget,
-                true,
-                target,
-                stabilityPercentForMode(mode, stats),
-                heldSecondsForMode(mode, stats)
-        );
+        practiceVisualizerView.setReading(mode, centsToTarget, true, target, stats);
         pitchText.setText(String.format(
                 Locale.CHINA,
                 "检测 %s · %s",
@@ -1148,20 +1257,33 @@ public final class MainActivity extends Activity {
                 MusicTheory.formatHz(result.frequencyHz)
         ));
         detailText.setText(formatVoicedDetail(target, centsToTarget, centsToNearest, result.rms));
-        metricText.setText(formatMetrics(mode, stats));
+        String metrics = mode == PracticeMode.SCALE
+                ? formatScaleMetrics(scaleProgress, stats)
+                : formatMetrics(mode, stats);
+        metricText.setText(metrics);
+        updateTechniqueMetricText(metrics);
     }
 
-    private void updateUnvoicedUi(TargetNote target, PracticeMode mode, PracticeStats stats) {
-        tunerView.setReading(
-                0.0,
-                false,
-                target,
-                stabilityPercentForMode(mode, stats),
-                heldSecondsForMode(mode, stats)
-        );
+    private void updateUnvoicedUi(
+            TargetNote target,
+            PracticeMode mode,
+            PracticeStats stats,
+            ScalePracticeProgress scaleProgress
+    ) {
+        practiceVisualizerView.setReading(mode, 0.0, false, target, stats);
         pitchText.setText("未检测到稳定音高");
         detailText.setText("请稳定吹出一个清晰长音，避免麦克风贴得太近或环境噪声过大。");
-        metricText.setText(formatMetrics(mode, stats));
+        String metrics = mode == PracticeMode.SCALE
+                ? formatScaleMetrics(scaleProgress, stats)
+                : formatMetrics(mode, stats);
+        metricText.setText(metrics);
+        updateTechniqueMetricText(metrics);
+    }
+
+    private void updateTechniqueMetricText(String metrics) {
+        if (techniqueMetricText != null) {
+            techniqueMetricText.setText(metrics);
+        }
     }
 
     private static double stabilityPercentForMode(PracticeMode mode, PracticeStats stats) {
@@ -1176,6 +1298,20 @@ public final class MainActivity extends Activity {
             return Double.NaN;
         }
         return stats.heldSeconds;
+    }
+
+    private void updateHoldPraise(PracticeMode mode, PracticeStats stats) {
+        boolean visible = mode == PracticeMode.LONG_TONE
+                && stats != null
+                && stats.heldSeconds >= HOLD_PRAISE_SECONDS;
+        setHoldPraiseVisible(visible);
+    }
+
+    private void setHoldPraiseVisible(boolean visible) {
+        if (holdPraiseThumb == null) {
+            return;
+        }
+        holdPraiseThumb.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
     }
 
     private static String safeStabilityCents(PracticeStats stats) {
@@ -1193,12 +1329,15 @@ public final class MainActivity extends Activity {
     }
 
     private String formatScorePanelSummary(PracticeScore score) {
+        String reportType = score.noteScores.isEmpty()
+                ? "专项报告"
+                : String.format(Locale.CHINA, "逐音分析 %d 项", score.noteScores.size());
         return String.format(
                 Locale.CHINA,
-                "综合评分 %d 分 · 有效 %.1f 秒\n逐音分析 %d 项，点击查看完整报告。",
+                "综合评分 %d 分 · 有效 %.1f 秒\n%s，点击查看完整报告。",
                 score.score,
                 score.voicedSeconds,
-                score.noteScores.size()
+                reportType
         );
     }
 
@@ -1545,35 +1684,66 @@ public final class MainActivity extends Activity {
             case TONGUING:
                 return String.format(
                         Locale.CHINA,
-                        "起音次数：%d\n当前偏差：%s\n建议：吐音后快速回到本音，不要让音头明显偏高。",
+                        "吐音：%d 次 · %.1f 次/秒\n均匀度：%s · 回本音：%s\n目标：音头短、间隔匀、落点准。",
                         stats.onsetCount,
+                        stats.tonguingRateHz,
+                        formatPercent(stats.tonguingEvennessPercent),
                         MusicTheory.formatCents(stats.cents)
                 );
             case VIBRATO:
                 return String.format(
                         Locale.CHINA,
-                        "气震频率：%.1f Hz\n气震深度：±%.0f cent\n建议：先控制在 4 到 6 Hz，幅度保持均匀。",
+                        "气震：%.1f Hz · 深度 ±%.0f cent\n规律性：%s · 中心：%s\n目标：频率匀，音高中心不漂。",
                         stats.vibratoRateHz,
-                        stats.vibratoDepthCents
+                        stats.vibratoDepthCents,
+                        formatPercent(stats.vibratoRegularityPercent),
+                        MusicTheory.formatCents(stats.cents)
                 );
             case SLIDE:
                 return String.format(
                         Locale.CHINA,
-                        "最近滑动：%s（%.0f cent）\n当前偏差：%s\n建议：滑到目标音后停稳，不要越过太多。",
+                        "滑音：%s · 幅度 %.0f cent\n平滑度：%s · 落点：%s\n目标：滑入后停在目标音。",
                         slideDirection(stats.slideDeltaCents),
-                        stats.slideDeltaCents,
-                        MusicTheory.formatCents(stats.cents)
+                        stats.slideRangeCents,
+                        formatPercent(stats.slideSmoothnessPercent),
+                        stats.slideLanded ? "已到位" : MusicTheory.formatCents(stats.cents)
                 );
             case ORNAMENT:
                 return String.format(
                         Locale.CHINA,
-                        "快速音高波动：%d 次\n当前偏差：%s\n建议：装饰动作要短，本音落点仍靠近 0 cent。",
-                        stats.rapidMoveCount,
+                        "打/叠：回落 %d 次 · 离音 %.0f cent\n最近用时：%.0f ms · 本音：%s\n目标：离得短，回得准。",
+                        stats.ornamentCount,
+                        stats.ornamentLastExcursionCents,
+                        stats.ornamentLastDurationMs,
                         MusicTheory.formatCents(stats.cents)
                 );
             default:
                 return "";
         }
+    }
+
+    private String formatScaleMetrics(ScalePracticeProgress progress, PracticeStats stats) {
+        if (progress == null || progress.totalNotes <= 0) {
+            return "音阶序列准备中。";
+        }
+        if (progress.completed) {
+            return String.format(
+                    Locale.CHINA,
+                    "音阶完成：%d/%d\n误吹次数：%d\n建议：停止查看评分，或重新开始下一轮。",
+                    progress.completedNotes,
+                    progress.totalNotes,
+                    progress.wrongAttempts
+            );
+        }
+        String centsText = stats == null || !stats.hasPitch ? "--" : MusicTheory.formatCents(stats.cents);
+        return String.format(
+                Locale.CHINA,
+                "音阶进度：%d/%d\n当前偏差：%s\n误吹次数：%d",
+                progress.currentIndex + 1,
+                progress.totalNotes,
+                centsText,
+                progress.wrongAttempts
+        );
     }
 
     private String slideDirection(double slideDeltaCents) {
@@ -1584,6 +1754,13 @@ public final class MainActivity extends Activity {
             return "向下";
         }
         return "接近平稳";
+    }
+
+    private static String formatPercent(double percent) {
+        if (Double.isNaN(percent) || Double.isInfinite(percent) || percent <= 0.0) {
+            return "--";
+        }
+        return String.format(Locale.CHINA, "%.0f%%", percent);
     }
 
     private XiaoTuning selectedTuning() {

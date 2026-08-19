@@ -12,7 +12,7 @@ import android.view.View;
 public final class WaveformView extends View {
     private static final float WINDOW_SECONDS = 0.012f;
     private static final float TRACE_POINTS_PER_PIXEL = 0.55f;
-    private static final float TRACE_VERTICAL_SCALE = 0.9f;
+    private static final float TRACE_VERTICAL_SCALE = 1.8f;
     private static final int TRACE_SMOOTHING_RADIUS = 2;
     private static final int CHART_SURFACE = Color.argb(218, 248, 243, 230);
     private static final int GUIDE = Color.rgb(214, 202, 184);
@@ -68,11 +68,13 @@ public final class WaveformView extends View {
         float height = getHeight();
         float density = getResources().getDisplayMetrics().density;
         float padding = 14.0f * density;
+        float plotTopPadding = 8.0f * density;
+        float timeLabelSpace = 18.0f * density;
         float axisX = 30.0f * density;
         float left = axisX + 12.0f * density;
         float right = width - padding;
-        float top = padding;
-        float bottom = height - padding - 16.0f * density;
+        float top = plotTopPadding;
+        float bottom = height - timeLabelSpace;
         float midY = (top + bottom) / 2.0f;
         float halfHeight = Math.max(1.0f, (bottom - top) / 2.0f);
         float cornerRadius = 12.0f * density;
@@ -96,7 +98,7 @@ public final class WaveformView extends View {
             return;
         }
 
-        float rmsHeight = Math.min(1.0f, calculateRms()) * halfHeight;
+        float rmsHeight = Math.min(1.0f, calculateRms() * TRACE_VERTICAL_SCALE) * halfHeight;
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(32, 29, 122, 107));
         canvas.drawRect(left, midY - rmsHeight, right, midY + rmsHeight, paint);
@@ -209,7 +211,7 @@ public final class WaveformView extends View {
     }
 
     private float sampleToY(int sampleOffset, float midY, float halfHeight) {
-        return midY - smoothedSampleAtOffset(sampleOffset) * halfHeight * TRACE_VERTICAL_SCALE;
+        return midY - clamp(smoothedSampleAtOffset(sampleOffset) * TRACE_VERTICAL_SCALE) * halfHeight;
     }
 
     private float smoothedSampleAtOffset(int offset) {

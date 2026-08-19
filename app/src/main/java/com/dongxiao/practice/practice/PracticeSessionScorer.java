@@ -29,9 +29,21 @@ public final class PracticeSessionScorer {
     private Double lastCents = null;
     private double maxVibratoRateHz = 0.0;
     private double maxVibratoDepthCents = 0.0;
+    private double maxVibratoRegularityPercent = 0.0;
+    private double maxTonguingRateHz = 0.0;
+    private double maxTonguingEvennessPercent = 0.0;
     private double maxAbsSlideCents = 0.0;
+    private double maxSlideRangeCents = 0.0;
+    private double maxSlideSmoothnessPercent = 0.0;
+    private boolean slideLanded = false;
+    private int ornamentCount = 0;
+    private double maxOrnamentExcursionCents = 0.0;
     private double frameScoreSum = 0.0;
     private int frameScoreCount = 0;
+    private int scaleCompletedNotes = 0;
+    private int scaleTotalNotes = 0;
+    private int scaleWrongAttempts = 0;
+    private boolean scaleCompleted = false;
     private final Map<Integer, NoteAccumulator> noteAccumulators = new LinkedHashMap<>();
 
     public void reset() {
@@ -52,9 +64,21 @@ public final class PracticeSessionScorer {
         lastCents = null;
         maxVibratoRateHz = 0.0;
         maxVibratoDepthCents = 0.0;
+        maxVibratoRegularityPercent = 0.0;
+        maxTonguingRateHz = 0.0;
+        maxTonguingEvennessPercent = 0.0;
         maxAbsSlideCents = 0.0;
+        maxSlideRangeCents = 0.0;
+        maxSlideSmoothnessPercent = 0.0;
+        slideLanded = false;
+        ornamentCount = 0;
+        maxOrnamentExcursionCents = 0.0;
         frameScoreSum = 0.0;
         frameScoreCount = 0;
+        scaleCompletedNotes = 0;
+        scaleTotalNotes = 0;
+        scaleWrongAttempts = 0;
+        scaleCompleted = false;
         noteAccumulators.clear();
     }
 
@@ -96,11 +120,30 @@ public final class PracticeSessionScorer {
         }
         accumulator.add(cents, absCents, deltaMs, frameScore);
         updateRapidMoveCounter(cents, nowMs);
+        onsetCount = Math.max(onsetCount, stats.onsetCount);
         maxVibratoRateHz = Math.max(maxVibratoRateHz, stats.vibratoRateHz);
         maxVibratoDepthCents = Math.max(maxVibratoDepthCents, stats.vibratoDepthCents);
+        maxVibratoRegularityPercent = Math.max(maxVibratoRegularityPercent, stats.vibratoRegularityPercent);
+        maxTonguingRateHz = Math.max(maxTonguingRateHz, stats.tonguingRateHz);
+        maxTonguingEvennessPercent = Math.max(maxTonguingEvennessPercent, stats.tonguingEvennessPercent);
         maxAbsSlideCents = Math.max(maxAbsSlideCents, Math.abs(stats.slideDeltaCents));
+        maxSlideRangeCents = Math.max(maxSlideRangeCents, stats.slideRangeCents);
+        maxSlideSmoothnessPercent = Math.max(maxSlideSmoothnessPercent, stats.slideSmoothnessPercent);
+        slideLanded = slideLanded || stats.slideLanded;
+        ornamentCount = Math.max(ornamentCount, stats.ornamentCount);
+        maxOrnamentExcursionCents = Math.max(maxOrnamentExcursionCents, stats.ornamentLastExcursionCents);
         lastRms = pitch.rms;
         lastCents = cents;
+    }
+
+    public void updateScaleProgress(ScalePracticeProgress progress) {
+        if (progress == null) {
+            return;
+        }
+        scaleCompletedNotes = Math.max(scaleCompletedNotes, progress.completedNotes);
+        scaleTotalNotes = Math.max(scaleTotalNotes, progress.totalNotes);
+        scaleWrongAttempts = Math.max(scaleWrongAttempts, progress.wrongAttempts);
+        scaleCompleted = scaleCompleted || progress.completed;
     }
 
     public PracticeScore finish(PracticeMode mode) {
@@ -131,6 +174,22 @@ public final class PracticeSessionScorer {
         int total;
         if (mode == PracticeMode.LONG_TONE) {
             total = clampScore(frameAverageScore);
+        } else if (mode == PracticeMode.SCALE) {
+            total = clampScore(
+                    pitchScore * 0.26
+                            + hitScore * 0.22
+                            + modeScore * 0.34
+                            + stabilityScore * 0.12
+                            + durationScore * 0.06
+            );
+        } else if (mode == PracticeMode.TONGUING) {
+            total = clampScore(modeScore * 0.46 + hitScore * 0.28 + pitchScore * 0.16 + durationScore * 0.10);
+        } else if (mode == PracticeMode.VIBRATO) {
+            total = clampScore(modeScore * 0.58 + pitchScore * 0.18 + hitScore * 0.14 + durationScore * 0.10);
+        } else if (mode == PracticeMode.SLIDE) {
+            total = clampScore(modeScore * 0.54 + hitScore * 0.24 + pitchScore * 0.12 + durationScore * 0.10);
+        } else if (mode == PracticeMode.ORNAMENT) {
+            total = clampScore(modeScore * 0.52 + hitScore * 0.24 + pitchScore * 0.14 + durationScore * 0.10);
         } else {
             total = clampScore(
                     pitchScore * 0.34
@@ -149,7 +208,7 @@ public final class PracticeSessionScorer {
                 hitRate,
                 commentFor(total, meanAbsCents, stabilityCents),
                 detailFor(mode, modeScore, frameAverageScore),
-                mode == PracticeMode.LONG_TONE ? buildNoteScores() : null
+                mode == PracticeMode.LONG_TONE || mode == PracticeMode.SCALE ? buildNoteScores() : null
         );
     }
 
@@ -190,17 +249,29 @@ public final class PracticeSessionScorer {
             case LONG_TONE:
                 return Math.min(100.0, durationSeconds / 8.0 * 100.0);
             case SCALE:
-                return Math.min(100.0, Math.max(hitFrames, rapidMoveCount) / 8.0 * 100.0);
+                if (scaleTotalNotes > 0) {
+                    double completionScore = scaleCompletedNotes * 100.0 / scaleTotalNotes;
+                    double wrongPenalty = Math.min(35.0, scaleWrongAttempts * 5.0);
+                    return Math.max(0.0, completionScore - wrongPenalty);
+                }
+                return Math.min(100.0, noteAccumulators.size() / 8.0 * 100.0);
             case TONGUING:
-                return Math.min(100.0, onsetCount / 8.0 * 100.0);
+                double onsetScore = Math.min(100.0, onsetCount / 10.0 * 100.0);
+                double tonguingRateScore = scoreInRange(maxTonguingRateHz, 1.5, 4.5, 0.6, 7.0);
+                return onsetScore * 0.45 + tonguingRateScore * 0.25 + maxTonguingEvennessPercent * 0.30;
             case VIBRATO:
-                double rateScore = scoreInRange(maxVibratoRateHz, 4.0, 6.0, 2.0, 8.0);
-                double depthScore = scoreInRange(maxVibratoDepthCents, 20.0, 60.0, 8.0, 95.0);
-                return rateScore * 0.6 + depthScore * 0.4;
+                double rateScore = scoreInRange(maxVibratoRateHz, 4.0, 6.5, 2.0, 8.0);
+                double depthScore = scoreInRange(maxVibratoDepthCents, 18.0, 65.0, 8.0, 100.0);
+                return rateScore * 0.45 + depthScore * 0.30 + maxVibratoRegularityPercent * 0.25;
             case SLIDE:
-                return scoreInRange(maxAbsSlideCents, 80.0, 350.0, 30.0, 650.0);
+                double slideRangeScore = scoreInRange(maxSlideRangeCents, 80.0, 350.0, 35.0, 700.0);
+                double landingScore = slideLanded ? 100.0 : Math.min(100.0, hitFrames * 100.0 / Math.max(1, voicedFrames));
+                return slideRangeScore * 0.45 + maxSlideSmoothnessPercent * 0.35 + landingScore * 0.20;
             case ORNAMENT:
-                return Math.min(100.0, rapidMoveCount / 6.0 * 100.0);
+                double countScore = Math.min(100.0, ornamentCount / 6.0 * 100.0);
+                double excursionScore = scoreInRange(maxOrnamentExcursionCents, 55.0, 220.0, 35.0, 420.0);
+                double returnScore = Math.min(100.0, hitFrames * 100.0 / Math.max(1, voicedFrames));
+                return countScore * 0.50 + excursionScore * 0.25 + returnScore * 0.25;
             default:
                 return 70.0;
         }
@@ -211,15 +282,50 @@ public final class PracticeSessionScorer {
             case LONG_TONE:
                 return String.format(Locale.CHINA, "长音专项：逐音平均 %.0f 分，持续度 %.0f 分。", frameAverageScore, modeScore);
             case SCALE:
-                return String.format(Locale.CHINA, "音阶专项：换音/命中 %.0f 分。", modeScore);
+                if (scaleTotalNotes > 0) {
+                    return String.format(
+                            Locale.CHINA,
+                            "音阶专项：完成 %d/%d，误吹 %d 次，序列分 %.0f。%s",
+                            scaleCompletedNotes,
+                            scaleTotalNotes,
+                            scaleWrongAttempts,
+                            modeScore,
+                            scaleCompleted ? "完整跑完一轮。" : "还没有完成整轮。"
+                    );
+                }
+                return String.format(Locale.CHINA, "音阶专项：覆盖 %d 个音，序列分 %.0f。", noteAccumulators.size(), modeScore);
             case TONGUING:
-                return String.format(Locale.CHINA, "吐音专项：检测到 %d 次起音。", onsetCount);
+                return String.format(
+                        Locale.CHINA,
+                        "吐音专项：起音 %d 次，速率 %.1f 次/秒，均匀度 %.0f 分。",
+                        onsetCount,
+                        maxTonguingRateHz,
+                        maxTonguingEvennessPercent
+                );
             case VIBRATO:
-                return String.format(Locale.CHINA, "气震专项：最高 %.1f Hz，深度 ±%.0f cent。", maxVibratoRateHz, maxVibratoDepthCents);
+                return String.format(
+                        Locale.CHINA,
+                        "气震专项：最高 %.1f Hz，深度 ±%.0f cent，规律性 %.0f 分。",
+                        maxVibratoRateHz,
+                        maxVibratoDepthCents,
+                        maxVibratoRegularityPercent
+                );
             case SLIDE:
-                return String.format(Locale.CHINA, "滑音专项：最大滑动 %.0f cent。", maxAbsSlideCents);
+                return String.format(
+                        Locale.CHINA,
+                        "滑音专项：滑动幅度 %.0f cent，平滑度 %.0f 分，%s。",
+                        Math.max(maxAbsSlideCents, maxSlideRangeCents),
+                        maxSlideSmoothnessPercent,
+                        slideLanded ? "落点已回到目标音" : "落点还需更稳"
+                );
             case ORNAMENT:
-                return String.format(Locale.CHINA, "装饰音专项：检测到 %d 次快速波动。", rapidMoveCount);
+                return String.format(
+                        Locale.CHINA,
+                        "装饰音专项：回落 %d 次，最大离音 %.0f cent，快速波动 %d 次。",
+                        ornamentCount,
+                        maxOrnamentExcursionCents,
+                        rapidMoveCount
+                );
             default:
                 return "";
         }

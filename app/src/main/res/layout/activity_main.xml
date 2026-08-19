@@ -360,17 +360,46 @@
                             android:layout_height="wrap_content"
                             android:layout_marginLeft="6dp"
                             android:layout_weight="1"
-                            android:text="音准表"
+                            android:text="专项图谱"
                             android:textColor="@color/ink"
                             android:textSize="16sp"
                             android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/holdPraiseThumb"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_hold_praise"
+                            android:contentDescription="连续命中10秒"
+                            android:importantForAccessibility="yes"
+                            android:padding="6dp"
+                            android:src="@drawable/ic_thumb_up"
+                            android:visibility="invisible" />
                     </LinearLayout>
 
-                    <com.dongxiao.practice.ui.TunerView
-                        android:id="@+id/tunerView"
+                    <com.dongxiao.practice.ui.ScaleScoreView
+                        android:id="@+id/scaleScoreView"
                         android:layout_width="match_parent"
-                        android:layout_height="132dp"
+                        android:layout_height="96dp"
+                        android:layout_marginTop="6dp"
+                        android:visibility="gone" />
+
+                    <com.dongxiao.practice.ui.PracticeVisualizerView
+                        android:id="@+id/practiceVisualizerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="164dp"
                         android:layout_marginTop="6dp" />
+
+                    <TextView
+                        android:id="@+id/techniqueMetricText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:lineSpacingExtra="2dp"
+                        android:maxLines="3"
+                        android:text="练习指标等待开始。"
+                        android:textColor="@color/ink"
+                        android:textSize="13sp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -398,7 +427,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginLeft="6dp"
                             android:layout_weight="1"
-                            android:text="实时波形"
+	                            android:text="声音纹理"
                             android:textColor="@color/ink"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -407,7 +436,7 @@
                     <com.dongxiao.practice.ui.WaveformView
                         android:id="@+id/waveformView"
                         android:layout_width="match_parent"
-                        android:layout_height="72dp"
+	                        android:layout_height="52dp"
                         android:layout_marginTop="6dp" />
                 </LinearLayout>
 
